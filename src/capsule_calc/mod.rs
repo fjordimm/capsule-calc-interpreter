@@ -1,4 +1,6 @@
-#[derive(Debug, Clone)]
+use std::collections::HashMap;
+
+#[derive(Debug)]
 pub enum Term {
     Constant(Constant),
     Var(Var),
@@ -48,7 +50,7 @@ impl Term {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Constant {
     None,
     Bool(bool),
@@ -69,7 +71,7 @@ impl Constant {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Var(String);
 
 impl Var {
@@ -90,4 +92,29 @@ pub enum Type {
     Func(Box<Type>, Box<Type>),
 }
 
+pub struct Environment(HashMap<Var, Term>);
 
+impl Environment {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn add(&mut self, variable: Var, value: Term) -> Option<Term> {
+        self.0.insert(variable, value)
+    }
+
+    pub fn lookup(&self, variable: &Var) -> Option<&Term> {
+        self.0.get(variable)
+    }
+}
+
+pub struct Capsule {
+    pub term: Term,
+    pub env: Environment,
+}
+
+impl Capsule {
+    pub fn new(term: Term, env: Environment) -> Self {
+        Self { term, env }
+    }
+}
