@@ -17,8 +17,8 @@ impl Term {
         Self::Constant(value)
     }
 
-    pub fn var(name: impl Into<String>) -> Self {
-        Self::Var(Var::new(name))
+    pub fn var(v: Var) -> Self {
+        Self::Var(v)
     }
 
     pub fn lambda(parameter: Var, body: Term) -> Self {
@@ -118,3 +118,5 @@ impl Capsule {
         Self { term, env }
     }
 }
+
+pub mod displaying;
