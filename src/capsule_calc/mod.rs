@@ -82,7 +82,7 @@ pub enum Constant {
     Int(u32),
     Func {
         name: String,
-        f: Box<fn(&Term) -> Term>,
+        f: Box<fn(&Constant) -> Term>,
     },
 }
 
@@ -99,7 +99,7 @@ impl Constant {
         Self::Int(value)
     }
 
-    pub fn func(name: impl Into<String>, f: fn(&Term) -> Term) -> Self {
+    pub fn func(name: impl Into<String>, f: fn(&Constant) -> Term) -> Self {
         Self::Func {
             name: name.into(),
             f: Box::new(f),
@@ -152,6 +152,10 @@ impl Environment {
 
     pub fn lookup_and_take(&mut self, _variable: &Var) -> Option<Box<Term>> {
         todo!()
+    }
+
+    pub fn fresh_var(&self) -> Var {
+        
     }
 }
 

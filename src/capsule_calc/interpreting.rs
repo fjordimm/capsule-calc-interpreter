@@ -1,4 +1,4 @@
-use crate::capsule_calc::{Environment, Term};
+use crate::capsule_calc::{Constant, Environment, Term};
 
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
     match term.as_mut() {
@@ -17,14 +17,23 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
             } else if !is_irreducible(&t2) {
                 take_step(t2, environment);
             } else {
-                todo!()
+                match (t1.as_mut(), t2.as_mut()) {
+                    (Term::Constant(Constant::Func { name: _, f }), Term::Constant(c)) => {
+                        **term = f(c)
+                    }
+                    (Term::Lambda(var, inner), argument) => {
+                        todo!()
+                    }
+                    _ => {
+                        println!("Invalid application.");
+                        **term = Term::Error;
+                    }
+                }
             }
         }
         _ => todo!(),
     }
 }
-
-// fn apply(term: &mut )
 
 pub fn is_irreducible(term: &Term) -> bool {
     match term {
