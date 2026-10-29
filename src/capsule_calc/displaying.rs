@@ -1,6 +1,19 @@
+use crate::capsule_calc::{CapsuleState, Environment};
+
 use super::{Constant, Term};
 
-pub fn display_term(term: Term) -> String {
+pub fn display_capsule(capsule: &CapsuleState) -> String {
+    let mut display = String::new();
+
+    display.push_str("===Term===\n");
+    display.push_str(&display_term(&capsule.term));
+    display.push_str("\n===Environment===");
+    display.push_str(&display_environment(&capsule.environment));
+
+    display
+}
+
+pub fn display_term(term: &Term) -> String {
     term.tree_display(0, true)
 }
 
@@ -22,7 +35,12 @@ fn indentation(indent: i32, is_last: bool) -> String {
     display
 }
 
-fn node(indent: i32, is_last: bool, label: impl Into<String>, children: &[String]) -> String {
+fn make_tree_string(
+    indent: i32,
+    is_last: bool,
+    label: impl Into<String>,
+    children: &[String],
+) -> String {
     let mut display = format!("{}{}", indentation(indent, is_last), label.into());
 
     for child in children {
@@ -36,17 +54,22 @@ fn node(indent: i32, is_last: bool, label: impl Into<String>, children: &[String
 impl TreeDisplayable for Term {
     fn tree_display(&self, indent: i32, is_last: bool) -> String {
         match self {
-            Term::Constant(value) => node(indent, is_last, constant_label(value), &[]),
-            Term::Var(variable) => {
-                node(indent, is_last, format!("Var({})", variable.as_str()), &[])
-            }
-            Term::Lambda(parameter, body) => node(
+            Term::Constant(value) => make_tree_string(
                 indent,
                 is_last,
-                format!("Lambda({})", parameter.as_str()),
+                format!("Constant: {}", value.as_str()),
+                &[],
+            ),
+            Term::Var(variable) => {
+                make_tree_string(indent, is_last, format!("Var: {}", variable.as_str()), &[])
+            }
+            Term::Lambda(parameter, body) => make_tree_string(
+                indent,
+                is_last,
+                format!("Lambda: {}", parameter.as_str()),
                 &[body.tree_display(indent + 1, true)],
             ),
-            Term::Application(function, argument) => node(
+            Term::Application(function, argument) => make_tree_string(
                 indent,
                 is_last,
                 "Application",
@@ -55,13 +78,13 @@ impl TreeDisplayable for Term {
                     argument.tree_display(indent + 1, true),
                 ],
             ),
-            Term::Assignment(variable, value) => node(
+            Term::Assignment(variable, value) => make_tree_string(
                 indent,
                 is_last,
-                format!("Assignment({})", variable.as_str()),
+                format!("Assignment: {}", variable.as_str()),
                 &[value.tree_display(indent + 1, true)],
             ),
-            Term::Composition(first, second) => node(
+            Term::Composition(first, second) => make_tree_string(
                 indent,
                 is_last,
                 "Composition",
@@ -70,7 +93,7 @@ impl TreeDisplayable for Term {
                     second.tree_display(indent + 1, true),
                 ],
             ),
-            Term::IfThenElse(condition, then_branch, else_branch) => node(
+            Term::IfThenElse(condition, then_branch, else_branch) => make_tree_string(
                 indent,
                 is_last,
                 "IfThenElse",
@@ -80,7 +103,7 @@ impl TreeDisplayable for Term {
                     else_branch.tree_display(indent + 1, true),
                 ],
             ),
-            Term::RepeatUntil(body, condition) => node(
+            Term::RepeatUntil(body, condition) => make_tree_string(
                 indent,
                 is_last,
                 "RepeatUntil",
@@ -93,10 +116,13 @@ impl TreeDisplayable for Term {
     }
 }
 
-fn constant_label(value: &Constant) -> String {
-    match value {
-        Constant::None => "Constant(None)".to_string(),
-        Constant::Bool(value) => format!("Constant(Bool({value}))"),
-        Constant::Int(value) => format!("Constant(Int({value}))"),
-    }
+pub fn display_environment(env: &Environment) -> String {
+    let mut display = String::new();
+
+    env.0.iter().for_each(|(var, term)| {
+        display.push_str(&format!("\n- {} :=\n", var.as_str()));
+        display.push_str(&display_term(term))
+    });
+
+    display
 }

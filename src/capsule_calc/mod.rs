@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 #[derive(Debug)]
 pub enum Term {
@@ -50,11 +50,34 @@ impl Term {
     }
 }
 
-#[derive(Debug)]
+/// Deep independent copy. Boxes clone their inner values, they do not copy over the pointer.
+/// Exception: `ConstFunc`s clone over the box, they do not make a new one.
+impl Clone for Term {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Constant(c) => Self::Constant(c.clone()),
+            Self::Var(v) => Self::Var(v.clone()),
+            Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
+            Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),
+            Self::Assignment(v, t) => Self::Assignment(v.clone(), t.to_owned()),
+            Self::Composition(t1, t2) => Self::Composition(t1.to_owned(), t2.to_owned()),
+            Self::IfThenElse(t1, t2, t3) => {
+                Self::IfThenElse(t1.to_owned(), t2.to_owned(), t3.to_owned())
+            }
+            Self::RepeatUntil(t1, t2) => Self::RepeatUntil(t1.to_owned(), t2.to_owned()),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Constant {
     None,
     Bool(bool),
     Int(u32),
+    Func {
+        name: String,
+        f: Box<fn(&Term) -> Term>,
+    },
 }
 
 impl Constant {
@@ -69,13 +92,29 @@ impl Constant {
     pub fn int(value: u32) -> Self {
         Self::Int(value)
     }
+
+    pub fn func(name: impl Into<String>, f: fn(&Term) -> Term) -> Self {
+        Self::Func {
+            name: name.into(),
+            f: Box::new(f),
+        }
+    }
+
+    pub fn as_str(&self) -> String {
+        match self {
+            Constant::None => "None".to_owned(),
+            Constant::Bool(value) => format!("Bool({})", value),
+            Constant::Int(value) => format!("Int({})", value),
+            Constant::Func { name, f: _ } => format!("Func({})", name),
+        }
+    }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Var(String);
 
 impl Var {
-    pub fn new(name: impl Into<String>) -> Self {
+    pub fn var(name: impl Into<String>) -> Self {
         Self(name.into())
     }
 
@@ -84,14 +123,7 @@ impl Var {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Type {
-    None,
-    Bool,
-    Int,
-    Func(Box<Type>, Box<Type>),
-}
-
+// TODO: Is it fine that this is an unordered map? I think so...
 pub struct Environment(HashMap<Var, Term>);
 
 impl Environment {
@@ -99,8 +131,13 @@ impl Environment {
         Self(HashMap::new())
     }
 
-    pub fn add(&mut self, variable: Var, value: Term) -> Option<Term> {
-        self.0.insert(variable, value)
+    pub fn with(mut self, variable: Var, value: Term) -> Self {
+        self.add(variable, value);
+        self
+    }
+
+    pub fn add(&mut self, variable: Var, value: Term) {
+        self.0.insert(variable, value);
     }
 
     pub fn lookup(&self, variable: &Var) -> Option<&Term> {
@@ -108,15 +145,16 @@ impl Environment {
     }
 }
 
-pub struct Capsule {
+pub struct CapsuleState {
     pub term: Term,
-    pub env: Environment,
+    pub environment: Environment,
 }
 
-impl Capsule {
-    pub fn new(term: Term, env: Environment) -> Self {
-        Self { term, env }
+impl CapsuleState {
+    pub fn new(term: Term, environment: Environment) -> Self {
+        Self { term, environment }
     }
 }
 
 pub mod displaying;
+pub mod interpreting;
