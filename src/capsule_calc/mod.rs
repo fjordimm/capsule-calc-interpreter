@@ -155,9 +155,15 @@ impl Environment {
     }
 
     pub fn fresh_var(&self) -> Var {
-        
+        loop {
+            let candidate = Var::var(format!("FRESH_{}", rand::random::<u64>()));
+            if !self.0.contains_key(&candidate) {
+                return candidate;
+            }
+        }
     }
 }
 
 pub mod displaying;
 pub mod interpreting;
+pub mod some_funcs;

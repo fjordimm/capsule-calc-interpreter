@@ -1,4 +1,6 @@
-use crate::capsule_calc::{Constant, Environment, Term};
+use std::mem;
+
+use crate::capsule_calc::{Constant, Environment, Term, Var};
 
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
     match term.as_mut() {
@@ -7,7 +9,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
         Term::Var(var) => {
             match environment.lookup(var) {
                 None => **term = Term::error(),
-                Some(value) => *term = value.clone(), // TODO: this is not lazy evaluation.
+                Some(value) => *term = value.clone(), // TODO: this is not lazy.
             };
         }
         Term::Lambda(_, _) => {}
@@ -21,8 +23,16 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
                     (Term::Constant(Constant::Func { name: _, f }), Term::Constant(c)) => {
                         **term = f(c)
                     }
-                    (Term::Lambda(var, inner), argument) => {
-                        todo!()
+                    (Term::Lambda(var, inner), _) => {
+                        let fresh_var = environment.fresh_var();
+
+                        let mut substed_inner = mem::replace(inner, Box::new(Term::Error)); // TODO: using mem::replace so I can own it, but might not be the most efficient.
+                        replace_var(&mut substed_inner, var, &fresh_var);
+
+                        let t2 = mem::replace(t2, Box::new(Term::Error)); // TODO: using mem::replace so I can own it, but might not be the most efficient.
+
+                        *term = substed_inner;
+                        environment.add(fresh_var, t2);
                     }
                     _ => {
                         println!("Invalid application.");
@@ -42,4 +52,8 @@ pub fn is_irreducible(term: &Term) -> bool {
         Term::Lambda(_, _) => true,
         _ => false,
     }
+}
+
+fn replace_var(_term: &mut Term, _original: &Var, _new: &Var) {
+    todo!()
 }

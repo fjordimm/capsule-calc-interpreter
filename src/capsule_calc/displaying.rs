@@ -1,12 +1,12 @@
-use crate::capsule_calc::{CapsuleState, Environment, Term};
+use crate::capsule_calc::{Environment, Term};
 
-pub fn display_capsule(capsule: &CapsuleState) -> String {
+pub fn display_capsule(term: &Term, environment: &Environment) -> String {
     let mut display = String::new();
 
     display.push_str("===Term===\n");
-    display.push_str(&display_term(&capsule.term));
+    display.push_str(&display_term(term));
     display.push_str("\n===Environment===");
-    display.push_str(&display_environment(&capsule.environment));
+    display.push_str(&display_environment(environment));
 
     display
 }
