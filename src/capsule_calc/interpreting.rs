@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::capsule_calc::{Constant, Environment, Term, Var};
+use crate::capsule_calc::{Constant, Environment, Term, Variable, t_error, t_var};
 
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
     match term.as_mut() {
@@ -8,7 +8,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
         Term::Constant(_) => {}
         Term::Var(var) => {
             match environment.lookup(var) {
-                None => **term = Term::error(),
+                None => **term = t_error(),
                 Some(value) => *term = value.clone(), // TODO: this is not lazy.
             };
         }
@@ -55,13 +55,13 @@ pub fn is_irreducible(term: &Term) -> bool {
 }
 
 /// Assumes `new` is a fresh variable.
-fn replace_var(term: &mut Term, original: &Var, new: &Var) {
+fn replace_var(term: &mut Term, original: &Variable, new: &Variable) {
     match term {
         Term::Error => {}
         Term::Constant(_) => {}
         Term::Var(var) => {
             if var == original {
-                *term = Term::var(new.clone());
+                *term = t_var(new.clone());
             }
         }
         Term::Lambda(param, inner) => {

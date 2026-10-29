@@ -4,55 +4,53 @@ use std::{collections::HashMap, hash::Hash};
 pub enum Term {
     Error,
     Constant(Constant),
-    Var(Var),
-    Lambda(Var, Box<Term>),
+    Var(Variable),
+    Lambda(Variable, Box<Term>),
     Application(Box<Term>, Box<Term>),
-    Assignment(Var, Box<Term>),
+    Assignment(Variable, Box<Term>),
     Composition(Box<Term>, Box<Term>),
     IfThenElse(Box<Term>, Box<Term>, Box<Term>),
     RepeatUntil(Box<Term>, Box<Term>),
 }
 
-impl Term {
-    pub fn error() -> Self {
-        Self::Error
-    }
+pub fn t_error() -> Term {
+    Term::Error
+}
 
-    pub fn constant(value: Constant) -> Self {
-        Self::Constant(value)
-    }
+pub fn t_constant(value: Constant) -> Term {
+    Term::Constant(value)
+}
 
-    pub fn var(var: Var) -> Self {
-        Self::Var(var)
-    }
+pub fn t_var(var: Variable) -> Term {
+    Term::Var(var)
+}
 
-    pub fn lambda(param: Var, body: Term) -> Self {
-        Self::Lambda(param, Box::new(body))
-    }
+pub fn t_lambda(param: Variable, body: Term) -> Term {
+    Term::Lambda(param, Box::new(body))
+}
 
-    pub fn application(t1: Term, t2: Term) -> Self {
-        Self::Application(Box::new(t1), Box::new(t2))
-    }
+pub fn t_application(t1: Term, t2: Term) -> Term {
+    Term::Application(Box::new(t1), Box::new(t2))
+}
 
-    pub fn assignment(var: Var, value: Term) -> Self {
-        Self::Assignment(var, Box::new(value))
-    }
+pub fn t_assignment(var: Variable, value: Term) -> Term {
+    Term::Assignment(var, Box::new(value))
+}
 
-    pub fn composition(t1: Term, t2: Term) -> Self {
-        Self::Composition(Box::new(t1), Box::new(t2))
-    }
+pub fn t_composition(t1: Term, t2: Term) -> Term {
+    Term::Composition(Box::new(t1), Box::new(t2))
+}
 
-    pub fn if_then_else(condition: Term, then_branch: Term, else_branch: Term) -> Self {
-        Self::IfThenElse(
-            Box::new(condition),
-            Box::new(then_branch),
-            Box::new(else_branch),
-        )
-    }
+pub fn t_if_then_else(condition: Term, then_branch: Term, else_branch: Term) -> Term {
+    Term::IfThenElse(
+        Box::new(condition),
+        Box::new(then_branch),
+        Box::new(else_branch),
+    )
+}
 
-    pub fn repeat_until(body: Term, condition: Term) -> Self {
-        Self::RepeatUntil(Box::new(body), Box::new(condition))
-    }
+pub fn t_repeat_until(body: Term, condition: Term) -> Term {
+    Term::RepeatUntil(Box::new(body), Box::new(condition))
 }
 
 /// Deep independent copy. Boxes clone their inner values, they do not copy over the pointer.
@@ -87,25 +85,6 @@ pub enum Constant {
 }
 
 impl Constant {
-    pub fn none() -> Self {
-        Self::None
-    }
-
-    pub fn bool(value: bool) -> Self {
-        Self::Bool(value)
-    }
-
-    pub fn int(value: u32) -> Self {
-        Self::Int(value)
-    }
-
-    pub fn func(name: impl Into<String>, f: fn(&Constant) -> Term) -> Self {
-        Self::Func {
-            name: name.into(),
-            f: Box::new(f),
-        }
-    }
-
     pub fn as_str(&self) -> String {
         match self {
             Constant::None => "None".to_owned(),
@@ -116,47 +95,66 @@ impl Constant {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct Var(String);
+pub fn c_none() -> Constant {
+    Constant::None
+}
 
-impl Var {
-    pub fn var(name: impl Into<String>) -> Self {
-        Self(name.into())
+pub fn c_bool(value: bool) -> Constant {
+    Constant::Bool(value)
+}
+
+pub fn c_int(value: u32) -> Constant {
+    Constant::Int(value)
+}
+
+pub fn c_func(name: impl Into<String>, f: fn(&Constant) -> Term) -> Constant {
+    Constant::Func {
+        name: name.into(),
+        f: Box::new(f),
     }
+}
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct Variable(String);
+
+impl Variable {
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
+pub fn varbl(name: impl Into<String>) -> Variable {
+    Variable(name.into())
+}
+
 // TODO: Is it fine that this is an unordered map? I think so...
-pub struct Environment(HashMap<Var, Box<Term>>);
+pub struct Environment(HashMap<Variable, Box<Term>>);
 
 impl Environment {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn with(mut self, variable: Var, value: Term) -> Self {
+    pub fn with(mut self, variable: Variable, value: Term) -> Self {
         self.add(variable, Box::new(value));
         self
     }
 
-    pub fn add(&mut self, variable: Var, value: Box<Term>) {
+    pub fn add(&mut self, variable: Variable, value: Box<Term>) {
         self.0.insert(variable, value);
     }
 
-    pub fn lookup(&self, variable: &Var) -> Option<&Box<Term>> {
+    pub fn lookup(&self, variable: &Variable) -> Option<&Box<Term>> {
         self.0.get(variable)
     }
 
-    pub fn lookup_and_take(&mut self, _variable: &Var) -> Option<Box<Term>> {
+    pub fn lookup_and_take(&mut self, _variable: &Variable) -> Option<Box<Term>> {
         todo!()
     }
 
-    pub fn fresh_var(&self) -> Var {
+    pub fn fresh_var(&self) -> Variable {
         loop {
-            let candidate = Var::var(format!("FRESH_{}", rand::random::<u64>()));
+            let candidate = varbl(format!("FRESH_{}", rand::random::<u64>()));
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
