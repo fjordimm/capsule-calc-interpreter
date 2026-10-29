@@ -5,7 +5,7 @@ pub fn display_capsule(term: &Term, environment: &Environment) -> String {
 
     display.push_str("===Term===\n");
     display.push_str(&display_term(term));
-    display.push_str("\n===Environment===");
+    display.push_str("\n===Environment===\n");
     display.push_str(&display_environment(environment));
 
     display
@@ -116,12 +116,17 @@ impl TreeDisplayable for Term {
 }
 
 pub fn display_environment(env: &Environment) -> String {
-    let mut display = String::new();
+    if env.0.is_empty() {
+        String::from("(empty)\n")
+    } else {
+        let mut display = String::new();
 
-    env.0.iter().for_each(|(var, term)| {
-        display.push_str(&format!("\n- {} :=\n", var.as_str()));
-        display.push_str(&display_term(term))
-    });
+        env.0.iter().for_each(|(var, term)| {
+            display.push_str(&format!("- {} :=\n", var.as_str()));
+            display.push_str(&display_term(term));
+            display.push('\n');
+        });
 
-    display
+        display
+    }
 }
