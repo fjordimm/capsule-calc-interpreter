@@ -23,11 +23,11 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
                     (Term::Constant(Constant::Func { name: _, f }), Term::Constant(c)) => {
                         **term = f(c)
                     }
-                    (Term::Lambda(var, inner), _) => {
+                    (Term::Lambda(param, body), _) => {
                         let fresh_var = environment.fresh_var();
 
-                        let mut substed_inner = mem::replace(inner, Box::new(Term::Error)); // TODO: using mem::replace so I can own it, but might not be the most efficient.
-                        replace_var(&mut substed_inner, var, &fresh_var);
+                        let mut substed_inner = mem::replace(body, Box::new(Term::Error)); // TODO: using mem::replace so I can own it, but might not be the most efficient.
+                        replace_var(&mut substed_inner, param, &fresh_var);
 
                         let t2 = mem::replace(t2, Box::new(Term::Error)); // TODO: using mem::replace so I can own it, but might not be the most efficient.
 
@@ -54,6 +54,53 @@ pub fn is_irreducible(term: &Term) -> bool {
     }
 }
 
-fn replace_var(_term: &mut Term, _original: &Var, _new: &Var) {
-    todo!()
+/// Assumes `new` is a fresh variable.
+fn replace_var(term: &mut Term, original: &Var, new: &Var) {
+    match term {
+        Term::Error => {}
+        Term::Constant(_) => {}
+        Term::Var(var) => {
+            if var == original {
+                *term = Term::var(new.clone());
+            }
+        }
+        Term::Lambda(param, inner) => {
+            if param != original {
+                if param == new {
+                    panic!(
+                        "This should not happen. Somehow a lambda parameter had the same name as a fresh variable."
+                    );
+                    // TODO: you can avoid this entirely by making Var an enum.
+                }
+
+                replace_var(inner, original, new);
+            }
+        }
+        Term::Application(t1, t2) => {
+            replace_var(t1, original, new);
+            replace_var(t2, original, new);
+        }
+        Term::Assignment(var, value) => {
+            // TODO: is this correct?
+
+            if var == original {
+                *var = new.clone();
+            }
+
+            replace_var(value, original, new);
+        }
+        Term::Composition(t1, t2) => {
+            replace_var(t1, original, new);
+            replace_var(t2, original, new);
+        }
+        Term::IfThenElse(condition, then_branch, else_branch) => {
+            replace_var(condition, original, new);
+            replace_var(then_branch, original, new);
+            replace_var(else_branch, original, new);
+        }
+        Term::RepeatUntil(body, condition) => {
+            replace_var(body, original, new);
+            replace_var(condition, original, new);
+        }
+    }
 }

@@ -22,24 +22,24 @@ impl Term {
         Self::Constant(value)
     }
 
-    pub fn var(v: Var) -> Self {
-        Self::Var(v)
+    pub fn var(var: Var) -> Self {
+        Self::Var(var)
     }
 
-    pub fn lambda(parameter: Var, body: Term) -> Self {
-        Self::Lambda(parameter, Box::new(body))
+    pub fn lambda(param: Var, body: Term) -> Self {
+        Self::Lambda(param, Box::new(body))
     }
 
-    pub fn application(function: Term, argument: Term) -> Self {
-        Self::Application(Box::new(function), Box::new(argument))
+    pub fn application(t1: Term, t2: Term) -> Self {
+        Self::Application(Box::new(t1), Box::new(t2))
     }
 
-    pub fn assignment(variable: Var, value: Term) -> Self {
-        Self::Assignment(variable, Box::new(value))
+    pub fn assignment(var: Var, value: Term) -> Self {
+        Self::Assignment(var, Box::new(value))
     }
 
-    pub fn composition(first: Term, second: Term) -> Self {
-        Self::Composition(Box::new(first), Box::new(second))
+    pub fn composition(t1: Term, t2: Term) -> Self {
+        Self::Composition(Box::new(t1), Box::new(t2))
     }
 
     pub fn if_then_else(condition: Term, then_branch: Term, else_branch: Term) -> Self {
