@@ -2,6 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 #[derive(Debug)]
 pub enum Term {
+    Error,
     Constant(Constant),
     Var(Var),
     Lambda(Var, Box<Term>),
@@ -13,6 +14,10 @@ pub enum Term {
 }
 
 impl Term {
+    pub fn error() -> Self {
+        Self::Error
+    }
+
     pub fn constant(value: Constant) -> Self {
         Self::Constant(value)
     }
@@ -55,6 +60,7 @@ impl Term {
 impl Clone for Term {
     fn clone(&self) -> Self {
         match self {
+            Self::Error => Self::Error,
             Self::Constant(c) => Self::Constant(c.clone()),
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
@@ -124,7 +130,7 @@ impl Var {
 }
 
 // TODO: Is it fine that this is an unordered map? I think so...
-pub struct Environment(HashMap<Var, Term>);
+pub struct Environment(HashMap<Var, Box<Term>>);
 
 impl Environment {
     pub fn new() -> Self {
@@ -132,27 +138,20 @@ impl Environment {
     }
 
     pub fn with(mut self, variable: Var, value: Term) -> Self {
-        self.add(variable, value);
+        self.add(variable, Box::new(value));
         self
     }
 
-    pub fn add(&mut self, variable: Var, value: Term) {
+    pub fn add(&mut self, variable: Var, value: Box<Term>) {
         self.0.insert(variable, value);
     }
 
-    pub fn lookup(&self, variable: &Var) -> Option<&Term> {
+    pub fn lookup(&self, variable: &Var) -> Option<&Box<Term>> {
         self.0.get(variable)
     }
-}
 
-pub struct CapsuleState {
-    pub term: Term,
-    pub environment: Environment,
-}
-
-impl CapsuleState {
-    pub fn new(term: Term, environment: Environment) -> Self {
-        Self { term, environment }
+    pub fn lookup_and_take(&mut self, _variable: &Var) -> Option<Box<Term>> {
+        todo!()
     }
 }
 

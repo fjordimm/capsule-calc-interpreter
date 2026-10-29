@@ -1,6 +1,4 @@
-use crate::capsule_calc::{CapsuleState, Environment};
-
-use super::{Constant, Term};
+use crate::capsule_calc::{CapsuleState, Environment, Term};
 
 pub fn display_capsule(capsule: &CapsuleState) -> String {
     let mut display = String::new();
@@ -54,6 +52,7 @@ fn make_tree_string(
 impl TreeDisplayable for Term {
     fn tree_display(&self, indent: i32, is_last: bool) -> String {
         match self {
+            Self::Error => make_tree_string(indent, is_last, "Error", &[]),
             Term::Constant(value) => make_tree_string(
                 indent,
                 is_last,
