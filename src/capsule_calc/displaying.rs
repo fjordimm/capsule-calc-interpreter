@@ -53,7 +53,7 @@ impl TreeDisplayable for Term {
     fn tree_display(&self, indent: i32, is_last: bool) -> String {
         match self {
             Self::Error => make_tree_string(indent, is_last, "Error", &[]),
-            Term::Constant(value) => make_tree_string(
+            Term::Const(value) => make_tree_string(
                 indent,
                 is_last,
                 format!("Constant: {}", value.as_str()),

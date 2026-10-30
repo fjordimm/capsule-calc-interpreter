@@ -3,7 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 #[derive(Debug)]
 pub enum Term {
     Error,
-    Constant(Constant),
+    Const(Constant),
     Var(Variable),
     Lambda(Variable, Box<Term>),
     Application(Box<Term>, Box<Term>),
@@ -17,8 +17,8 @@ pub fn t_error() -> Term {
     Term::Error
 }
 
-pub fn t_constant(value: Constant) -> Term {
-    Term::Constant(value)
+pub fn t_const(value: Constant) -> Term {
+    Term::Const(value)
 }
 
 pub fn t_var(var: Variable) -> Term {
@@ -59,7 +59,7 @@ impl Clone for Term {
     fn clone(&self) -> Self {
         match self {
             Self::Error => Self::Error,
-            Self::Constant(c) => Self::Constant(c.clone()),
+            Self::Const(c) => Self::Const(c.clone()),
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),
@@ -123,7 +123,7 @@ impl Variable {
     }
 }
 
-pub fn varbl(name: impl Into<String>) -> Variable {
+pub fn variable(name: impl Into<String>) -> Variable {
     Variable(name.into())
 }
 
@@ -154,7 +154,7 @@ impl Environment {
 
     pub fn fresh_var(&self) -> Variable {
         loop {
-            let candidate = varbl(format!("FRESH_{}", rand::random::<u64>()));
+            let candidate = variable(format!("FRESH_{}", rand::random::<u64>()));
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
