@@ -16,6 +16,7 @@ pub fn start_cli(mut term: Box<Term>, mut environment: Environment) -> io::Resul
         }
         println!();
         println!("{}", display_capsule(&term, &environment));
+        println!();
         print!("Enter to take step. Q to end: ");
         io::stdout().flush()?;
 
