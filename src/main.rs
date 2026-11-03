@@ -5,7 +5,7 @@ use capsule_calc_interpreter::{
 };
 
 fn main() -> std::io::Result<()> {
-    let input = "x := 13 ; x";
+    let input = "letrec f be \\x -> (if x == 0 then True else f (x - 1)) in f 5";
 
     let term = parse(&lex(input));
     let environment = Environment::new();
@@ -13,7 +13,7 @@ fn main() -> std::io::Result<()> {
     start_cli(term, environment)
 }
 
-// TODO: test order of ops for if then else
+// TODO: make fresh vars more readable
 // TODO: assignment to terms containing free variables?
 // TODO: test Landin's knot
 // TODO: make thing for CLI that does n iterations
