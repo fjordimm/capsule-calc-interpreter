@@ -5,7 +5,7 @@ use capsule_calc_interpreter::{
 };
 
 fn main() -> std::io::Result<()> {
-    let input = "True && True";
+    let input = "if True then if True then 1 else 2 else 3";
 
     let term = parse(&lex(input));
     let environment = Environment::new();

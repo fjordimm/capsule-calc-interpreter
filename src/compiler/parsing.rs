@@ -4,7 +4,7 @@ use crate::{
     },
     capsule_calc::{
         c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const, t_lambda, t_var,
-        variable, Constant, Term,
+        tt_if_then_else, tt_let_be_in, tt_letrec_be_in, tt_while_do, variable, Constant, Term,
     },
     compiler::lexing::Lexeme,
 };
@@ -31,7 +31,64 @@ impl Parser<'_> {
     fn parse_term(&mut self) -> Box<Term> {
         match self.peek() {
             Some(Lexeme::Backslash) => self.parse_lambda(),
+            Some(Lexeme::If) => self.parse_if_then_else(),
+            Some(Lexeme::While) => self.parse_while_do(),
+            Some(Lexeme::Let) => self.parse_let_be_in(false),
+            Some(Lexeme::Letrec) => self.parse_let_be_in(true),
             _ => self.parse_assignment(),
+        }
+    }
+
+    fn parse_if_then_else(&mut self) -> Box<Term> {
+        self.position += 1;
+        let condition = self.parse_term();
+        self.expect_keyword(Lexeme::Then, "then");
+        let then_case = self.parse_term();
+        self.expect_keyword(Lexeme::Else, "else");
+        let else_case = self.parse_term();
+
+        Box::new(tt_if_then_else(*condition, *then_case, *else_case))
+    }
+
+    fn parse_while_do(&mut self) -> Box<Term> {
+        self.position += 1;
+        let condition = self.parse_term();
+        self.expect_keyword(Lexeme::Do, "do");
+        let body = self.parse_term();
+
+        Box::new(tt_while_do(*condition, *body))
+    }
+
+    fn parse_let_be_in(&mut self, recursive: bool) -> Box<Term> {
+        self.expect_keyword(
+            if recursive {
+                Lexeme::Letrec
+            } else {
+                Lexeme::Let
+            },
+            if recursive { "letrec" } else { "let" },
+        );
+
+        let bound_variable = match self.next() {
+            Some(Lexeme::Identifier(name)) => variable(name.clone()),
+            token => panic!("Expected identifier after let, found {token:?}"),
+        };
+        self.expect_keyword(Lexeme::Be, "be");
+        let value = self.parse_term();
+        self.expect_keyword(Lexeme::In, "in");
+        let body = self.parse_term();
+
+        if recursive {
+            Box::new(tt_letrec_be_in(bound_variable, *value, *body))
+        } else {
+            Box::new(tt_let_be_in(bound_variable, *value, *body))
+        }
+    }
+
+    fn expect_keyword(&mut self, expected: Lexeme, name: &str) {
+        match self.next() {
+            Some(token) if token == &expected => {}
+            token => panic!("Expected {name}, found {token:?}"),
         }
     }
 
@@ -330,5 +387,59 @@ mod tests {
             panic!("expected ADD application");
         };
         assert_eq!(binary_operator_name(right), "MUL");
+    }
+
+    fn contains_function(term: &Term, expected_name: &str) -> bool {
+        match term {
+            Term::Const(crate::capsule_calc::Constant::Func { name, .. }) => name == expected_name,
+            Term::Application(Some(function), Some(argument)) => {
+                contains_function(function, expected_name)
+                    || contains_function(argument, expected_name)
+            }
+            Term::Lambda(_, Some(body)) | Term::Assignment(_, Some(body)) => {
+                contains_function(body, expected_name)
+            }
+            _ => false,
+        }
+    }
+
+    fn contains_assignment(term: &Term) -> bool {
+        match term {
+            Term::Assignment(_, _) => true,
+            Term::Application(Some(function), Some(argument)) => {
+                contains_assignment(function) || contains_assignment(argument)
+            }
+            Term::Lambda(_, Some(body)) => contains_assignment(body),
+            _ => false,
+        }
+    }
+
+    #[test]
+    fn parses_if_then_else_and_while_do() {
+        let conditional = parse(&lex("if True then 1 else 2"));
+        assert!(contains_function(&conditional, "ITE"));
+
+        let loop_term = parse(&lex("while False do Unit"));
+        assert!(contains_function(&loop_term, "ITE"));
+        assert!(contains_assignment(&loop_term));
+    }
+
+    #[test]
+    fn parses_let_and_letrec_with_nested_terms() {
+        let let_term = parse(&lex("let x be if True then 1 else 2 in x"));
+        assert!(contains_function(&let_term, "ITE"));
+        assert!(matches!(
+            let_term.as_ref(),
+            Term::Application(Some(binding), Some(_))
+                if matches!(binding.as_ref(), Term::Lambda(_, _))
+        ));
+
+        let letrec_term = parse(&lex("letrec f be \\x -> x in f"));
+        assert!(contains_assignment(&letrec_term));
+        assert!(matches!(
+            letrec_term.as_ref(),
+            Term::Application(Some(binding), Some(_))
+                if matches!(binding.as_ref(), Term::Lambda(_, _))
+        ));
     }
 }
