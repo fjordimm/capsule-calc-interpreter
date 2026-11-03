@@ -5,9 +5,11 @@ use capsule_calc_interpreter::{
 };
 
 fn main() -> std::io::Result<()> {
-    // let input = "letrec f be \\x -> (if x == 0 then 777 else f (x - 1)) in f 5";
-    let input = "(\\f -> f := (\\x -> if x != 0 then (f (x - 1)) else 777) ; (f 5)) 666";
-    // let input = "if True then good := 777 else bad := 666";
+    let input = "letrec f be \\x -> (
+        if x == 0 then 1
+        else if x == 1 then 1
+        else f (x - 1) + f (x - 2)
+    ) in f 5";
 
     let term = parse(&lex(input));
     let environment = Environment::new();

@@ -1,7 +1,7 @@
 letrec f be
-    \\x -> (
+    \x -> (
         if x == 0 then
-            True
+            777
         else
             f (x - 1)
     )
