@@ -1,6 +1,7 @@
 use std::{collections::HashMap, hash::Hash};
 
-#[derive(Debug)]
+use dyn_clone::DynClone;
+
 pub enum Term {
     Const(Constant),
     Var(Variable),
@@ -43,7 +44,10 @@ impl Clone for Term {
     }
 }
 
-#[derive(Debug, Clone)]
+trait ConstFuncInner: Fn(&Constant) -> Term + DynClone {}
+
+impl<F> ConstFuncInner for F where F: Fn(&Constant) -> Term + DynClone {}
+
 pub enum Constant {
     Error,
     Unit,
@@ -51,7 +55,8 @@ pub enum Constant {
     Int(u32),
     Func {
         name: String,
-        f: Box<fn(&Constant) -> Term>,
+        #[allow(private_interfaces)]
+        f: Box<dyn ConstFuncInner>,
     },
 }
 
@@ -62,7 +67,22 @@ impl Constant {
             Constant::Unit => String::from("Unit"),
             Constant::Bool(value) => format!("Bool({})", value),
             Constant::Int(value) => format!("Int({})", value),
-            Constant::Func { name, f: _ } => format!("Func({})", name),
+            Constant::Func { name, f: _ } => format!("Func(\"{}\")", name),
+        }
+    }
+}
+
+impl Clone for Constant {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Error => Self::Error,
+            Self::Unit => Self::Unit,
+            Self::Bool(arg0) => Self::Bool(arg0.clone()),
+            Self::Int(arg0) => Self::Int(arg0.clone()),
+            Self::Func { name, f } => Self::Func {
+                name: name.clone(),
+                f: dyn_clone::clone_box(&**f),
+            },
         }
     }
 }
@@ -83,7 +103,8 @@ pub fn c_int(value: u32) -> Constant {
     Constant::Int(value)
 }
 
-pub fn c_func(name: impl Into<String>, f: fn(&Constant) -> Term) -> Constant {
+#[allow(private_interfaces, private_bounds)]
+pub fn c_func(name: impl Into<String>, f: impl ConstFuncInner + 'static) -> Constant {
     Constant::Func {
         name: name.into(),
         f: Box::new(f),
@@ -159,5 +180,6 @@ fn some_or_panic_rm(t: &mut Option<Box<Term>>) -> &mut Box<Term> {
     }
 }
 
+pub mod collection_of_const_funcs;
 pub mod displaying;
 pub mod interpreting;

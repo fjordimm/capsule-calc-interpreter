@@ -1,18 +1,20 @@
+use capsule_calc_interpreter::capsule_calc::collection_of_const_funcs::DIV;
 use capsule_calc_interpreter::capsule_calc::{Environment, c_int, t_application, t_const};
 use capsule_calc_interpreter::cli::start_cli;
-use capsule_calc_interpreter::compiler::lexer::lex;
-use capsule_calc_interpreter::some_funcs::INCR;
 
-// fn main() -> std::io::Result<()> {
-//     let term = Box::new(t_application(t_const(INCR()), t_const(c_int(3))));
-//     let environment = Environment::new();
+fn main() -> std::io::Result<()> {
+    let term = Box::new(t_application(
+        t_application(t_const(DIV()), t_const(c_int(5))),
+        t_const(c_int(0)),
+    ));
+    let environment = Environment::new();
 
-//     start_cli(term, environment)
-// }
-
-fn main() {
-    println!("{:?}", lex("(x:=3)"));
+    start_cli(term, environment)
 }
+
+// fn main() {
+//     println!("{:?}", lex("(x:=3)"));
+// }
 
 // TODO: test Landin's knot
 // TODO: make thing for CLI that does n iterations

@@ -1,0 +1,101 @@
+#![allow(non_snake_case)]
+
+use crate::capsule_calc::{Constant, c_bool, c_error, c_func, c_int, t_const};
+
+pub fn INCR() -> Constant {
+    c_func("INCR", |inp| match inp {
+        Constant::Int(value) => t_const(c_int(*value + 1)),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn DECR() -> Constant {
+    c_func("DECR", |inp| match inp {
+        Constant::Int(value) => t_const(c_int((*value - 1).max(0))),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn ADD() -> Constant {
+    c_func("ADD", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("ADD-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_int(value1_ + *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn SUB() -> Constant {
+    c_func("SUB", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("SUB-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => {
+                    if *value2 > value1_ {
+                        t_const(c_int(0))
+                    } else {
+                        t_const(c_int(value1_ - *value2))
+                    }
+                }
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn MUL() -> Constant {
+    c_func("MUL", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("MUL-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_int(value1_ * *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn DIV() -> Constant {
+    c_func("DIV", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("DIV-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => {
+                    if *value2 == 0 {
+                        t_const(c_error())
+                    } else {
+                        t_const(c_int(value1_ / *value2))
+                    }
+                }
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn NOT() -> Constant {
+    c_func("NOT", |inp| match inp {
+        Constant::Bool(value) => t_const(c_bool(!*value)),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn IS_0() -> Constant {
+    c_func("IS_0", |inp| match inp {
+        Constant::Int(value) => {
+            if *value == 0 {
+                t_const(c_bool(true))
+            } else {
+                t_const(c_bool(false))
+            }
+        }
+        _ => t_const(c_error()),
+    })
+}
