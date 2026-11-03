@@ -80,6 +80,32 @@ pub fn DIV() -> Constant {
     })
 }
 
+pub fn EQ() -> Constant {
+    c_func("EQ", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("EQ-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_bool(value1_ == *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn NEQ() -> Constant {
+    c_func("NEQ", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("NEQ-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_bool(value1_ != *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
 pub fn LT() -> Constant {
     c_func("LT", |inp1| match inp1 {
         Constant::Int(value1) => t_const(c_func("LT-closure", {
