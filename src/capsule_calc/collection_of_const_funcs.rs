@@ -80,9 +80,87 @@ pub fn DIV() -> Constant {
     })
 }
 
+pub fn LT() -> Constant {
+    c_func("LT", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("LT-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_bool(value1_ < *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn GT() -> Constant {
+    c_func("GT", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("GT-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_bool(value1_ > *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn LEQ() -> Constant {
+    c_func("LEQ", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("LEQ-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_bool(value1_ <= *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn GEQ() -> Constant {
+    c_func("GEQ", |inp1| match inp1 {
+        Constant::Int(value1) => t_const(c_func("GEQ-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Int(value2) => t_const(c_bool(value1_ >= *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
 pub fn NOT() -> Constant {
     c_func("NOT", |inp| match inp {
         Constant::Bool(value) => t_const(c_bool(!*value)),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn AND() -> Constant {
+    c_func("AND", |inp1| match inp1 {
+        Constant::Bool(value1) => t_const(c_func("AND-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Bool(value2) => t_const(c_bool(value1_ && *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn OR() -> Constant {
+    c_func("OR", |inp1| match inp1 {
+        Constant::Bool(value1) => t_const(c_func("OR-closure", {
+            let value1_ = *value1;
+            move |inp2| match inp2 {
+                Constant::Bool(value2) => t_const(c_bool(value1_ || *value2)),
+                _ => t_const(c_error()),
+            }
+        })),
         _ => t_const(c_error()),
     })
 }

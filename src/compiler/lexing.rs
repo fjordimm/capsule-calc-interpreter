@@ -8,10 +8,12 @@ pub enum Lexeme {
     Assignment,
     Equals,
     NotEquals,
-    LessThan,
-    GreaterThan,
+    And,
+    Or,
     Leq,
     Geq,
+    Lt,
+    Gt,
     Bang,
     Plus,
     Minus,
@@ -34,7 +36,8 @@ pub enum Lexeme {
     Identifier(String),
 }
 
-// Written by Copilot.
+// Lexer written by Copilot.
+
 pub fn lex(input: &str) -> Vec<Lexeme> {
     let chars: Vec<char> = input.chars().collect();
     let mut lexemes = Vec::new();
@@ -96,6 +99,8 @@ pub fn lex(input: &str) -> Vec<Lexeme> {
             (':', Some('=')) => Some(Lexeme::Assignment),
             ('=', Some('=')) => Some(Lexeme::Equals),
             ('!', Some('=')) => Some(Lexeme::NotEquals),
+            ('&', Some('&')) => Some(Lexeme::And),
+            ('|', Some('|')) => Some(Lexeme::Or),
             ('<', Some('=')) => Some(Lexeme::Leq),
             ('>', Some('=')) => Some(Lexeme::Geq),
             _ => None,
@@ -111,14 +116,14 @@ pub fn lex(input: &str) -> Vec<Lexeme> {
             ')' => Lexeme::RParen,
             '\\' => Lexeme::Backslash,
             ';' => Lexeme::Semicolon,
-            '<' => Lexeme::LessThan,
-            '>' => Lexeme::GreaterThan,
+            '<' => Lexeme::Lt,
+            '>' => Lexeme::Gt,
             '!' => Lexeme::Bang,
             '+' => Lexeme::Plus,
             '-' => Lexeme::Minus,
             '*' => Lexeme::Asterisk,
             '/' => Lexeme::Slash,
-            _ => panic!("unexpected character {current:?} at position {position}"),
+            _ => panic!("Unexpected character {current:?} at position {position}"),
         };
         lexemes.push(lexeme);
         position += 1;
@@ -140,12 +145,12 @@ fn is_identifier_continue(character: char) -> bool {
 // Written by Copilot.
 #[cfg(test)]
 mod tests {
-    use super::{lex, Lexeme};
+    use super::{Lexeme, lex};
 
     #[test]
     fn lexes_operators_including_multi_character_operators() {
         assert_eq!(
-            lex("( ) \\ -> ; := == != < > <= >= ! + - * /"),
+            lex("( ) \\ -> ; := == != && || < > <= >= ! + - * /"),
             vec![
                 Lexeme::LParen,
                 Lexeme::RParen,
@@ -155,8 +160,10 @@ mod tests {
                 Lexeme::Assignment,
                 Lexeme::Equals,
                 Lexeme::NotEquals,
-                Lexeme::LessThan,
-                Lexeme::GreaterThan,
+                Lexeme::And,
+                Lexeme::Or,
+                Lexeme::Lt,
+                Lexeme::Gt,
                 Lexeme::Leq,
                 Lexeme::Geq,
                 Lexeme::Bang,
@@ -212,6 +219,8 @@ mod tests {
 
     #[test]
     fn operators_do_not_join_across_whitespace() {
-        assert_eq!(lex("- >"), vec![Lexeme::Minus, Lexeme::GreaterThan]);
+        assert_eq!(lex("- >"), vec![Lexeme::Minus, Lexeme::Gt]);
+        assert!(std::panic::catch_unwind(|| lex("& &")).is_err());
+        assert!(std::panic::catch_unwind(|| lex("| |")).is_err());
     }
 }
