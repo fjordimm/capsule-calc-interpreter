@@ -4,7 +4,8 @@ use crate::{
     },
     capsule_calc::{
         c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const, t_lambda, t_var,
-        tt_if_then_else, tt_let_be_in, tt_letrec_be_in, tt_while_do, variable, Constant, Term,
+        tt_composition, tt_if_then_else, tt_let_be_in, tt_letrec_be_in, tt_while_do, variable,
+        Constant, Term,
     },
     compiler::lexing::Lexeme,
 };
@@ -35,7 +36,7 @@ impl Parser<'_> {
             Some(Lexeme::While) => self.parse_while_do(),
             Some(Lexeme::Let) => self.parse_let_be_in(false),
             Some(Lexeme::Letrec) => self.parse_let_be_in(true),
-            _ => self.parse_assignment(),
+            _ => self.parse_composition(),
         }
     }
 
@@ -121,6 +122,18 @@ impl Parser<'_> {
         } else {
             left
         }
+    }
+
+    fn parse_composition(&mut self) -> Box<Term> {
+        let mut term = self.parse_assignment();
+
+        while matches!(self.peek(), Some(Lexeme::Semicolon)) {
+            self.position += 1;
+            let next_term = self.parse_assignment();
+            term = Box::new(tt_composition(*term, *next_term));
+        }
+
+        term
     }
 
     fn parse_or(&mut self) -> Box<Term> {
@@ -326,8 +339,28 @@ mod tests {
 
     #[test]
     fn rejects_unsupported_operators() {
-        let result = std::panic::catch_unwind(|| parse(&lex("x ; y")));
+        let result = std::panic::catch_unwind(|| parse(&lex("x -> y")));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn parses_semicolon_as_composition_in_source_order() {
+        let term = parse(&lex("a ; b"));
+        let Term::Application(Some(function), Some(argument)) = term.as_ref() else {
+            panic!("expected composition application");
+        };
+        assert!(matches!(
+            argument.as_ref(),
+            Term::Var(variable) if variable.as_str() == "a"
+        ));
+        let Term::Lambda(parameter, Some(body)) = function.as_ref() else {
+            panic!("expected composition lambda");
+        };
+        assert_eq!(parameter.as_str(), "$_");
+        assert!(matches!(
+            body.as_ref(),
+            Term::Var(variable) if variable.as_str() == "b"
+        ));
     }
 
     fn binary_operator_name(term: &Term) -> &str {
