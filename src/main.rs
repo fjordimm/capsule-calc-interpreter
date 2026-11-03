@@ -14,7 +14,7 @@ use capsule_calc_interpreter::{
 // }
 
 fn main() {
-    let lexemes = lex("(\\ x -> Unit) (a b c)");
+    let lexemes = lex("a == (b == c)");
     println!("{:?}", lexemes);
     println!();
     println!("{}", display_term(&parse(&lexemes)));
