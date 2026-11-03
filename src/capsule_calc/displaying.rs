@@ -52,12 +52,9 @@ fn make_tree_string(
 impl TreeDisplayable for Term {
     fn tree_display(&self, indent: i32, is_last: bool) -> String {
         match self {
-            Term::Const(value) => make_tree_string(
-                indent,
-                is_last,
-                format!("Constant: {}", value.as_str()),
-                &[],
-            ),
+            Term::Const(value) => {
+                make_tree_string(indent, is_last, format!("Const: {}", value.as_str()), &[])
+            }
             Term::Var(variable) => {
                 make_tree_string(indent, is_last, format!("Var: {}", variable.as_str()), &[])
             }

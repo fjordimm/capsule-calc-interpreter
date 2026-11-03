@@ -1,23 +1,16 @@
 use capsule_calc_interpreter::{
-    capsule_calc::displaying::display_term,
+    capsule_calc::Environment,
+    cli::start_cli,
     compiler::{lexing::lex, parsing::parse},
 };
 
-// fn main() -> std::io::Result<()> {
-//     let term = Box::new(t_application(
-//         t_application(t_const(DIV()), t_const(c_int(5))),
-//         t_const(c_int(0)),
-//     ));
-//     let environment = Environment::new();
+fn main() -> std::io::Result<()> {
+    let input = "a := 1 + 2";
 
-//     start_cli(term, environment)
-// }
+    let term = parse(&lex(input));
+    let environment = Environment::new();
 
-fn main() {
-    let lexemes = lex("a == (b == c)");
-    println!("{:?}", lexemes);
-    println!();
-    println!("{}", display_term(&parse(&lexemes)));
+    start_cli(term, environment)
 }
 
 // TODO: test Landin's knot
