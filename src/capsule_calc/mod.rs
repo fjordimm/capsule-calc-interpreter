@@ -6,6 +6,8 @@ use crate::capsule_calc::collection_of_const_funcs::ITE;
 
 pub enum Term {
     Const(Constant),
+    /// The ⊥ constant used in Landin's knot (see https://www.cs.cornell.edu/~kozen/Papers/New.pdf).
+    Irreducinator,
     Var(Variable),
     Lambda(Variable, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
@@ -68,16 +70,17 @@ pub fn tt_let_be_in(var: Variable, value: Term, term: Term) -> Term {
 pub fn tt_letrec_be_in(var: Variable, value: Term, term: Term) -> Term {
     t_application(
         t_lambda(var.clone(), tt_composition(t_assignment(var, value), term)),
-        t_const(c_unit()),
+        Term::Irreducinator,
     )
 }
 
 /// Deep independent copy. Boxes clone their inner values, they do not copy over the pointer.
-/// Exception: `ConstFunc`s clone over the box, they do not make a new one.
+/// Exception: `Constant::Func::f` will clone over the box, not make a new one.
 impl Clone for Term {
     fn clone(&self) -> Self {
         match self {
             Self::Const(c) => Self::Const(c.clone()),
+            Self::Irreducinator => Self::Irreducinator,
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),

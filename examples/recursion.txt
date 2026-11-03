@@ -1,0 +1,9 @@
+letrec f be
+    \\x -> (
+        if x == 0 then
+            True
+        else
+            f (x - 1)
+    )
+in
+    f 5

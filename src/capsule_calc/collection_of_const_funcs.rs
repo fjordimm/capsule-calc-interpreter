@@ -224,3 +224,23 @@ pub fn ITE() -> Constant {
         _ => t_const(c_error()),
     })
 }
+
+/// Evaluates parameters first.
+pub fn ITE_ALT() -> Constant {
+    c_func("ITE_ALT", |inp| match inp {
+        Constant::Bool(value) => {
+            if *value {
+                t_lambda(
+                    variable("$then_term"),
+                    t_lambda(variable("$else_term"), t_var(variable("$then_term"))),
+                )
+            } else {
+                t_lambda(
+                    variable("$then_term"),
+                    t_lambda(variable("$else_term"), t_var(variable("$else_term"))),
+                )
+            }
+        }
+        _ => t_const(c_error()),
+    })
+}

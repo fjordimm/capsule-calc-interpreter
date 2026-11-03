@@ -8,20 +8,24 @@ use crate::capsule_calc::{
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
     match term.as_mut() {
         Term::Const(_) => {}
-        Term::Var(var) => {
-            match environment.lookup(var) {
-                None => **term = t_const(c_error()),
-                Some(value) => *term = value.clone(), // TODO: this is not lazy.
-            };
+        Term::Irreducinator => {
+            // TODO: maybe write a warning here, since this should never actually be evaluated.
         }
+        Term::Var(var) => match environment.lookup(var) {
+            None => **term = t_const(c_error()),
+            Some(value) => match value.as_ref() {
+                Term::Irreducinator => {}
+                _ => *term = value.clone(),
+            },
+        },
         Term::Lambda(_, _) => {}
         Term::Application(t1, t2) => {
             let t1_s = some_or_panic_rm(t1);
             let t2_s = some_or_panic_rm(t2);
 
-            if !is_irreducible(t1_s) {
+            if !is_irreducible(t1_s, environment) {
                 take_step(t1_s, environment);
-            } else if !is_irreducible(t2_s) {
+            } else if !is_irreducible(t2_s, environment) {
                 take_step(t2_s, environment);
             } else {
                 match (t1_s.as_mut(), t2_s.as_mut()) {
@@ -38,7 +42,6 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
                         *term = some_or_panic(body_substed);
                     }
                     _ => {
-                        println!("Invalid application.");
                         **term = t_const(c_error());
                     }
                 }
@@ -47,7 +50,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
         Term::Assignment(var, value) => {
             let value_s = some_or_panic_rm(value);
 
-            if !is_irreducible(value_s) {
+            if !is_irreducible(value_s, environment) {
                 take_step(value_s, environment);
             } else {
                 let value_substed = mem::replace(value, None);
@@ -59,10 +62,18 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
     }
 }
 
-pub fn is_irreducible(term: &Term) -> bool {
+pub fn is_irreducible(term: &Term, environment: &Environment) -> bool {
     match term {
         Term::Const(_) => true,
+        Term::Irreducinator => true,
         Term::Lambda(_, _) => true,
+        Term::Var(var) => match environment.lookup(var) {
+            None => panic!("While in `is_irreducible`, found an unbound variable."),
+            Some(value) => match value.as_ref() {
+                Term::Irreducinator => true,
+                _ => false,
+            },
+        },
         _ => false,
     }
 }
@@ -73,6 +84,7 @@ fn replace_var(term: &mut Option<Box<Term>>, original: &Variable, new: &Variable
 
     match term.as_mut() {
         Term::Const(_) => {}
+        Term::Irreducinator => {}
         Term::Var(var) => {
             if var == original {
                 **term = t_var(new.clone());

@@ -1,11 +1,11 @@
-use crate::capsule_calc::{some_or_panic_r, Environment, Term};
+use crate::capsule_calc::{Environment, Term, some_or_panic_r};
 
 pub fn display_capsule(term: &Term, environment: &Environment) -> String {
     let mut display = String::new();
 
-    display.push_str("===Environment===\n");
+    display.push_str("=======Environment=======\n");
     display.push_str(&display_environment(environment));
-    display.push_str("\n===Term===\n");
+    display.push_str("\n=======Term=======\n");
     display.push_str(&display_term(term));
 
     display
@@ -52,6 +52,7 @@ impl TreeDisplayable for Term {
             Term::Const(value) => {
                 make_tree_string(indent, format!("Const: {}", value.as_str()), &[])
             }
+            Self::Irreducinator => make_tree_string(indent, "Irreducinator", &[]),
             Term::Var(variable) => {
                 make_tree_string(indent, format!("Var: {}", variable.as_str()), &[])
             }
