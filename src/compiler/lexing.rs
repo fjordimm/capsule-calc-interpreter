@@ -61,7 +61,7 @@ pub fn lex(input: &str) -> Vec<Lexeme> {
             lexemes.push(Lexeme::LitNum(
                 number
                     .parse()
-                    .expect("numeric literal is out of range for u32"),
+                    .expect("Numeric literal is out of range for u32"),
             ));
             continue;
         }

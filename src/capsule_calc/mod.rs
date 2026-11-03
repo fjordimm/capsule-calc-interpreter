@@ -2,6 +2,8 @@ use std::{collections::HashMap, hash::Hash};
 
 use dyn_clone::DynClone;
 
+use crate::capsule_calc::collection_of_const_funcs::ITE;
+
 pub enum Term {
     Const(Constant),
     Var(Variable),
@@ -28,6 +30,46 @@ pub fn t_application(t1: Term, t2: Term) -> Term {
 
 pub fn t_assignment(var: Variable, value: Term) -> Term {
     Term::Assignment(var, Some(Box::new(value)))
+}
+
+pub fn tt_composition(t1: Term, t2: Term) -> Term {
+    t_application(t_lambda(variable("$_"), t2), t1)
+}
+
+pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
+    t_application(
+        t_application(t_application(t_const(ITE()), condition), then_case),
+        else_case,
+    )
+}
+
+pub fn tt_while_do(condition: Term, body: Term) -> Term {
+    tt_letrec_be_in(
+        variable("$w"),
+        t_lambda(
+            variable("$x"),
+            tt_if_then_else(
+                condition,
+                tt_composition(
+                    body,
+                    t_application(t_var(variable("$w")), t_const(c_unit())),
+                ),
+                t_const(c_unit()),
+            ),
+        ),
+        t_application(t_var(variable("$w")), t_const(c_unit())),
+    )
+}
+
+pub fn tt_let_be_in(var: Variable, value: Term, term: Term) -> Term {
+    t_application(t_lambda(var, term), value)
+}
+
+pub fn tt_letrec_be_in(var: Variable, value: Term, term: Term) -> Term {
+    t_application(
+        t_lambda(var.clone(), tt_composition(t_assignment(var, value), term)),
+        t_const(c_unit()),
+    )
 }
 
 /// Deep independent copy. Boxes clone their inner values, they do not copy over the pointer.
@@ -151,7 +193,7 @@ impl Environment {
 
     pub fn fresh_var(&self) -> Variable {
         loop {
-            let candidate = variable(format!("FRESH_{}", rand::random::<u64>()));
+            let candidate = variable(format!("${}", rand::random::<u64>()));
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }

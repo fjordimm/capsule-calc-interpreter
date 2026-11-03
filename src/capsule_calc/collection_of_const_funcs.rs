@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 
-use crate::capsule_calc::{Constant, c_bool, c_error, c_func, c_int, t_const};
+use crate::capsule_calc::{
+    Constant, c_bool, c_error, c_func, c_int, t_const, t_lambda, t_var, variable,
+};
 
 pub fn INCR() -> Constant {
     c_func("INCR", |inp| match inp {
@@ -198,6 +200,25 @@ pub fn IS_0() -> Constant {
                 t_const(c_bool(true))
             } else {
                 t_const(c_bool(false))
+            }
+        }
+        _ => t_const(c_error()),
+    })
+}
+
+pub fn ITE() -> Constant {
+    c_func("ITE", |inp| match inp {
+        Constant::Bool(value) => {
+            if *value {
+                t_lambda(
+                    variable("$then_term"),
+                    t_lambda(variable("$else_term"), t_var(variable("$then_term"))),
+                )
+            } else {
+                t_lambda(
+                    variable("$then_term"),
+                    t_lambda(variable("$else_term"), t_var(variable("$else_term"))),
+                )
             }
         }
         _ => t_const(c_error()),
