@@ -10,7 +10,7 @@ pub fn start_cli(mut term: Box<Term>, mut environment: Environment) -> io::Resul
     loop {
         println!("{}", "-".repeat(80));
         println!("Iteration #{}", iteration);
-        match is_irreducible(&term, &environment) {
+        match is_irreducible(&term) {
             true => println!("(NOT reducible)"),
             false => println!("(reducible)"),
         }

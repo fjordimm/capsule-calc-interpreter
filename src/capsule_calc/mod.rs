@@ -2,12 +2,10 @@ use std::{collections::HashMap, hash::Hash};
 
 use dyn_clone::DynClone;
 
-use crate::capsule_calc::collection_of_const_funcs::ITE;
+use crate::capsule_calc::collection_of_const_funcs::TO_CHURCH_BOOL;
 
 pub enum Term {
     Const(Constant),
-    /// The ⊥ constant used in Landin's knot (see https://www.cs.cornell.edu/~kozen/Papers/New.pdf).
-    Irreducinator,
     Var(Variable),
     Lambda(Variable, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
@@ -40,8 +38,14 @@ pub fn tt_composition(t1: Term, t2: Term) -> Term {
 
 pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
     t_application(
-        t_application(t_application(t_const(ITE()), condition), then_case),
-        else_case,
+        t_application(
+            t_application(
+                t_application(t_const(TO_CHURCH_BOOL()), condition),
+                t_lambda(variable("$_"), then_case),
+            ),
+            t_lambda(variable("$_"), else_case),
+        ),
+        t_const(c_unit()),
     )
 }
 
@@ -70,7 +74,7 @@ pub fn tt_let_be_in(var: Variable, value: Term, term: Term) -> Term {
 pub fn tt_letrec_be_in(var: Variable, value: Term, term: Term) -> Term {
     t_application(
         t_lambda(var.clone(), tt_composition(t_assignment(var, value), term)),
-        Term::Irreducinator,
+        t_const(c_unit()),
     )
 }
 
@@ -80,7 +84,6 @@ impl Clone for Term {
     fn clone(&self) -> Self {
         match self {
             Self::Const(c) => Self::Const(c.clone()),
-            Self::Irreducinator => Self::Irreducinator,
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),

@@ -52,7 +52,6 @@ impl TreeDisplayable for Term {
             Term::Const(value) => {
                 make_tree_string(indent, format!("Const: {}", value.as_str()), &[])
             }
-            Self::Irreducinator => make_tree_string(indent, "Irreducinator", &[]),
             Term::Var(variable) => {
                 make_tree_string(indent, format!("Var: {}", variable.as_str()), &[])
             }

@@ -206,41 +206,16 @@ pub fn IS_0() -> Constant {
     })
 }
 
-pub fn ITE() -> Constant {
-    c_func("ITE", |inp| match inp {
-        Constant::Bool(value) => {
-            if *value {
-                t_lambda(
-                    variable("$then_term"),
-                    t_lambda(variable("$else_term"), t_var(variable("$then_term"))),
-                )
-            } else {
-                t_lambda(
-                    variable("$then_term"),
-                    t_lambda(variable("$else_term"), t_var(variable("$else_term"))),
-                )
-            }
-        }
-        _ => t_const(c_error()),
-    })
-}
-
-/// Evaluates parameters first.
-pub fn ITE_ALT() -> Constant {
-    c_func("ITE_ALT", |inp| match inp {
-        Constant::Bool(value) => {
-            if *value {
-                t_lambda(
-                    variable("$then_term"),
-                    t_lambda(variable("$else_term"), t_var(variable("$then_term"))),
-                )
-            } else {
-                t_lambda(
-                    variable("$then_term"),
-                    t_lambda(variable("$else_term"), t_var(variable("$else_term"))),
-                )
-            }
-        }
+pub fn TO_CHURCH_BOOL() -> Constant {
+    c_func("TO_CHURCH_BOOL", |inp| match inp {
+        Constant::Bool(true) => t_lambda(
+            variable("$first"),
+            t_lambda(variable("$second"), t_var(variable("$first"))),
+        ),
+        Constant::Bool(false) => t_lambda(
+            variable("$first"),
+            t_lambda(variable("$second"), t_var(variable("$second"))),
+        ),
         _ => t_const(c_error()),
     })
 }
