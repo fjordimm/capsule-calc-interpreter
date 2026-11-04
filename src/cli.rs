@@ -1,4 +1,4 @@
-use crate::capsule_calc::interpreting::is_irreducible;
+use crate::capsule_calc::interpreting::{collect_garbage, is_irreducible};
 use crate::capsule_calc::{Environment, Term};
 use crate::capsule_calc::{displaying::display_capsule, interpreting::take_step};
 use std::io::{self, Write};
@@ -26,6 +26,7 @@ pub fn start_cli(mut term: Box<Term>, mut environment: Environment) -> io::Resul
         }
 
         take_step(&mut term, &mut environment);
+        collect_garbage(&term, &mut environment);
         iteration += 1;
     }
 

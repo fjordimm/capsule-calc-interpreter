@@ -15,6 +15,10 @@ pub fn display_term(term: &Term) -> String {
     term.tree_display(String::new(), true)
 }
 
+pub fn display_term_with_indent(term: &Term, indent: String) -> String {
+    term.tree_display(indent, true)
+}
+
 /// Renders a value as an indented, one-node-per-line tree.
 pub trait TreeDisplayable {
     fn tree_display(&self, indent: String, is_last: bool) -> String;
@@ -84,8 +88,8 @@ pub fn display_environment(env: &Environment) -> String {
         let mut display = String::new();
 
         env.0.iter().for_each(|(var, term)| {
-            display.push_str(&format!("- {} :=\n", var.as_str()));
-            display.push_str(&display_term(term));
+            display.push_str(&format!("{} :=\n", var.as_str()));
+            display.push_str(&display_term_with_indent(term, String::from("  ")));
             display.push('\n');
         });
 

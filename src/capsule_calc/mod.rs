@@ -193,8 +193,8 @@ impl Environment {
         self.0.get(variable)
     }
 
-    pub fn lookup_and_take(&mut self, _variable: &Variable) -> Option<Box<Term>> {
-        todo!()
+    pub fn remove(&mut self, variable: &Variable) {
+        self.0.remove(variable);
     }
 
     pub fn fresh_var(&self) -> Variable {
@@ -203,6 +203,16 @@ impl Environment {
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
+        }
+    }
+
+    pub fn fresh_var_based_on(&self, old: &Variable) -> Variable {
+        let mut candidate = variable(format!("{}'", old.0));
+        loop {
+            if !self.0.contains_key(&candidate) {
+                return candidate;
+            }
+            candidate = variable(format!("{}'", candidate.0));
         }
     }
 }
@@ -230,4 +240,5 @@ fn some_or_panic_rm(t: &mut Option<Box<Term>>) -> &mut Box<Term> {
 
 pub mod collection_of_const_funcs;
 pub mod displaying;
+pub mod garbage_collection;
 pub mod interpreting;
