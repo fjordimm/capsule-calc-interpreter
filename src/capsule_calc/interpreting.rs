@@ -1,8 +1,8 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    Constant, Environment, Term, Variable, c_error, c_unit, some_or_panic, some_or_panic_r,
-    some_or_panic_rm, t_const, t_var,
+    Constant, Environment, Term, Variable, c_error, c_unit, some_or_panic, some_or_panic_rm,
+    t_const, t_var,
 };
 
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
@@ -92,8 +92,6 @@ fn replace_var(term: &mut Option<Box<Term>>, original: &Variable, new: &Variable
             replace_var(t2, original, new);
         }
         Term::Assignment(var, value) => {
-            // TODO: is this correct?
-
             if var == original {
                 *var = new.clone();
             }

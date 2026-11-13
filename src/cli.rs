@@ -1,4 +1,5 @@
-use crate::capsule_calc::interpreting::{collect_garbage, is_irreducible};
+use crate::capsule_calc::garbage_collection::collect_garbage;
+use crate::capsule_calc::interpreting::is_irreducible;
 use crate::capsule_calc::{Environment, Term};
 use crate::capsule_calc::{displaying::display_capsule, interpreting::take_step};
 use std::io::{self, Write};
