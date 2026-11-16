@@ -4,10 +4,7 @@ use crate::capsule_calc::{Environment, Term, Variable, some_or_panic_r};
 
 /// Uses a tracing mark-and-sweep method.
 pub fn collect_garbage(term: &Term, environment: &mut Environment) {
-    let mut vars_in_question = free_vars(term)
-        .into_iter()
-        .cloned()
-        .collect::<Vec<_>>();
+    let mut vars_in_question = free_vars(term).into_iter().cloned().collect::<Vec<_>>();
     let mut visited_vars = HashSet::<Variable>::new();
 
     while let Some(var) = vars_in_question.pop() {
@@ -26,6 +23,9 @@ pub fn collect_garbage(term: &Term, environment: &mut Environment) {
 fn free_vars(term: &Term) -> HashSet<&Variable> {
     match term {
         Term::Const(_) => HashSet::new(),
+        Term::ConstFunc1(_) => HashSet::new(),
+        Term::ConstFunc2(_) => HashSet::new(),
+        Term::ConstFunc3(_) => HashSet::new(),
         Term::Var(var) => HashSet::from([var]),
         Term::Lambda(param, body) => {
             let mut vars = free_vars(some_or_panic_r(body));

@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    Constant, Environment, Term, Variable, c_error, c_unit, some_or_panic, some_or_panic_rm,
+    Const, Environment, Term, Variable, c_error, c_unit, some_or_panic, some_or_panic_rm,
     t_const, t_var,
 };
 
@@ -23,7 +23,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
                 take_step(t2_s, environment);
             } else {
                 match (t1_s.as_mut(), t2_s.as_mut()) {
-                    (Term::Const(Constant::Func { name: _, f }), Term::Const(c)) => **term = f(c),
+                    (Term::Const(Const::Func { name: _, f }), Term::Const(c)) => **term = f(c),
                     (Term::Lambda(param, body), _) => {
                         let fresh_var = environment.fresh_var_based_on(param);
 

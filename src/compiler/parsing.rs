@@ -3,7 +3,7 @@ use crate::{
         ADD, AND, DIV, EQ, GEQ, GT, LEQ, LT, MUL, NEQ, NOT, OR, SUB,
     },
     capsule_calc::{
-        Constant, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
+        Const, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
         t_lambda, t_var, tt_composition, tt_if_then_else, tt_let_be_in, tt_letrec_be_in,
         tt_while_do, variable,
     },
@@ -190,7 +190,7 @@ impl Parser<'_> {
     fn parse_left_associative(
         &mut self,
         parse_operand: impl Fn(&mut Self) -> Box<Term>,
-        get_operator: impl Fn(&Lexeme) -> Option<Constant>,
+        get_operator: impl Fn(&Lexeme) -> Option<Const>,
     ) -> Box<Term> {
         let mut term = parse_operand(self);
 
@@ -272,7 +272,7 @@ impl Parser<'_> {
     }
 }
 
-fn apply_binary_operator(left: Term, right: Term, function: Constant) -> Term {
+fn apply_binary_operator(left: Term, right: Term, function: Const) -> Term {
     t_application(t_application(t_const(function), left), right)
 }
 
@@ -370,7 +370,7 @@ mod tests {
         let Term::Application(Some(function), Some(_)) = partial.as_ref() else {
             panic!("expected a partially applied binary operator");
         };
-        let Term::Const(crate::capsule_calc::Constant::Func2 { name, .. }) = function.as_ref()
+        let Term::Const(crate::capsule_calc::Const::Func2 { name, .. }) = function.as_ref()
         else {
             panic!("expected the operator function");
         };
@@ -405,7 +405,7 @@ mod tests {
         };
         assert!(matches!(
             function.as_ref(),
-            Term::Const(crate::capsule_calc::Constant::Func1 { name, .. }) if name == "NOT"
+            Term::Const(crate::capsule_calc::Const::Func1 { name, .. }) if name == "NOT"
         ));
 
         assert!(matches!(*parse(&lex("x := 1")), Term::Assignment(_, _)));
@@ -424,8 +424,8 @@ mod tests {
 
     fn contains_function(term: &Term, expected_name: &str) -> bool {
         match term {
-            Term::Const(crate::capsule_calc::Constant::Func1 { name, .. }) => name == expected_name,
-            Term::Const(crate::capsule_calc::Constant::Func2 { name, .. }) => name == expected_name,
+            Term::Const(crate::capsule_calc::Const::Func1 { name, .. }) => name == expected_name,
+            Term::Const(crate::capsule_calc::Const::Func2 { name, .. }) => name == expected_name,
             Term::Application(Some(function), Some(argument)) => {
                 contains_function(function, expected_name)
                     || contains_function(argument, expected_name)

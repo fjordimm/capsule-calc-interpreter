@@ -3,15 +3,30 @@ use std::{collections::HashMap, hash::Hash};
 use crate::capsule_calc::collection_of_const_funcs::TO_CHURCH_BOOL;
 
 pub enum Term {
-    Const(Constant),
+    Const(Const),
+    ConstFunc1(ConstFunc1),
+    ConstFunc2(ConstFunc2),
+    ConstFunc3(ConstFunc3),
     Var(Variable),
     Lambda(Variable, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
     Assignment(Variable, Option<Box<Term>>),
 }
 
-pub fn t_const(value: Constant) -> Term {
+pub fn t_const(value: Const) -> Term {
     Term::Const(value)
+}
+
+pub fn t_constfunc1(func: ConstFunc1) -> Term {
+    Term::ConstFunc1(func)
+}
+
+pub fn t_constfunc2(func: ConstFunc2) -> Term {
+    Term::ConstFunc2(func)
+}
+
+pub fn t_constfunc3(func: ConstFunc3) -> Term {
+    Term::ConstFunc3(func)
 }
 
 pub fn t_var(var: Variable) -> Term {
@@ -38,7 +53,7 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
     t_application(
         t_application(
             t_application(
-                t_application(t_const(TO_CHURCH_BOOL()), condition),
+                t_application(t_constfunc1(TO_CHURCH_BOOL()), condition),
                 t_lambda(variable("$_"), then_case),
             ),
             t_lambda(variable("$_"), else_case),
@@ -77,11 +92,13 @@ pub fn tt_letrec_be_in(var: Variable, value: Term, term: Term) -> Term {
 }
 
 /// Deep independent copy. Boxes clone their inner values, they do not copy over the pointer.
-/// Exception: `Constant::Func::f` will clone over the box, not make a new one.
 impl Clone for Term {
     fn clone(&self) -> Self {
         match self {
             Self::Const(c) => Self::Const(c.clone()),
+            Self::ConstFunc1(f) => Self::ConstFunc1(f.clone()),
+            Self::ConstFunc2(f) => Self::ConstFunc2(f.clone()),
+            Self::ConstFunc3(f) => Self::ConstFunc3(f.clone()),
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),
@@ -90,98 +107,112 @@ impl Clone for Term {
     }
 }
 
-pub enum Constant {
+#[derive(Clone)]
+pub enum Const {
     Error,
     Unit,
     Bool(bool),
     Int(u32),
-    /// Constant function with one argument.
-    Func1 {
-        name: String,
-        f: fn(&Constant) -> Term,
-    },
-    /// Constant function with two arguments.
-    Func2 {
-        name: String,
-        f: fn(&Constant, &Constant) -> Term,
-    },
 }
 
-impl Constant {
+pub fn c_error() -> Const {
+    Const::Error
+}
+
+pub fn c_unit() -> Const {
+    Const::Unit
+}
+
+pub fn c_bool(value: bool) -> Const {
+    Const::Bool(value)
+}
+
+pub fn c_int(value: u32) -> Const {
+    Const::Int(value)
+}
+
+impl Const {
     pub fn as_str(&self) -> String {
         match self {
-            Constant::Error => String::from("Error"),
-            Constant::Unit => String::from("Unit"),
-            Constant::Bool(value) => format!("Bool({})", value),
-            Constant::Int(value) => format!("Int({})", value),
-            Constant::Func1 { name, f: _ } => format!("Func1(\"{}\")", name),
-            Constant::Func2 { name, f: _ } => format!("Func2(\"{}\")", name),
+            Const::Error => String::from("Error"),
+            Const::Unit => String::from("Unit"),
+            Const::Bool(value) => format!("Bool({})", value),
+            Const::Int(value) => format!("Int({})", value),
         }
     }
-}
-
-impl Clone for Constant {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Error => Self::Error,
-            Self::Unit => Self::Unit,
-            Self::Bool(arg0) => Self::Bool(arg0.clone()),
-            Self::Int(arg0) => Self::Int(arg0.clone()),
-            Self::Func1 { name, f } => Self::Func1 {
-                name: name.clone(),
-                f: f.clone(),
-            },
-            Self::Func2 { name, f } => Self::Func2 {
-                name: name.clone(),
-                f: f.clone(),
-            },
-        }
-    }
-}
-
-pub fn c_error() -> Constant {
-    Constant::Error
-}
-
-pub fn c_unit() -> Constant {
-    Constant::Unit
-}
-
-pub fn c_bool(value: bool) -> Constant {
-    Constant::Bool(value)
-}
-
-pub fn c_int(value: u32) -> Constant {
-    Constant::Int(value)
 }
 
 /// Constant function with one argument.
-pub fn c_func1(name: impl Into<String>, f: fn(&Constant) -> Term) -> Constant {
-    Constant::Func1 {
+#[derive(Clone)]
+pub struct ConstFunc1 {
+    name: String,
+    f: fn(&Const) -> Term,
+}
+
+/// Constant function with two arguments.
+#[derive(Clone)]
+pub struct ConstFunc2 {
+    name: String,
+    f: fn(&Const, &Const) -> Term,
+}
+
+/// Constant function with three arguments.
+#[derive(Clone)]
+pub struct ConstFunc3 {
+    name: String,
+    f: fn(&Const, &Const, &Const) -> Term,
+}
+
+pub fn constfunc1(name: impl Into<String>, f: fn(&Const) -> Term) -> ConstFunc1 {
+    ConstFunc1 {
         name: name.into(),
         f,
     }
 }
 
-/// Constant function with two argument.
-pub fn c_func2(name: impl Into<String>, f: fn(&Constant, &Constant) -> Term) -> Constant {
-    Constant::Func2 {
+pub fn constfunc2(name: impl Into<String>, f: fn(&Const, &Const) -> Term) -> ConstFunc2 {
+    ConstFunc2 {
         name: name.into(),
         f,
+    }
+}
+
+pub fn constfunc3(name: impl Into<String>, f: fn(&Const, &Const, &Const) -> Term) -> ConstFunc3 {
+    ConstFunc3 {
+        name: name.into(),
+        f,
+    }
+}
+
+impl ConstFunc1 {
+    pub fn as_str(&self) -> String {
+        format!("`{}`", self.name)
+    }
+}
+
+impl ConstFunc2 {
+    pub fn as_str(&self) -> String {
+        format!("`{}`", self.name)
+    }
+}
+
+impl ConstFunc3 {
+    pub fn as_str(&self) -> String {
+        format!("`{}`", self.name)
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Variable(String);
 
+pub fn variable(name: impl Into<String>) -> Variable {
+    Variable(name.into())
+}
+
 impl Variable {
     pub fn as_str(&self) -> &str {
         &self.0
     }
-}
-
-pub fn variable(name: impl Into<String>) -> Variable {
-    Variable(name.into())
 }
 
 // TODO: Is it fine that this is an unordered map? I think so...

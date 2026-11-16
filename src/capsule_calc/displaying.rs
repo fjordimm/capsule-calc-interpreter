@@ -56,6 +56,15 @@ impl TreeDisplayable for Term {
             Term::Const(value) => {
                 make_tree_string(indent, format!("Const: {}", value.as_str()), &[])
             }
+            Term::ConstFunc1(func) => {
+                make_tree_string(indent, format!("ConstFunc1: {}", func.as_str()), &[])
+            }
+            Term::ConstFunc2(func) => {
+                make_tree_string(indent, format!("ConstFunc2: {}", func.as_str()), &[])
+            }
+            Term::ConstFunc3(func) => {
+                make_tree_string(indent, format!("ConstFunc3: {}", func.as_str()), &[])
+            }
             Term::Var(variable) => {
                 make_tree_string(indent, format!("Var: {}", variable.as_str()), &[])
             }
