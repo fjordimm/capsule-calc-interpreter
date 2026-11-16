@@ -1,7 +1,5 @@
 use std::{collections::HashMap, hash::Hash};
 
-use dyn_clone::DynClone;
-
 use crate::capsule_calc::collection_of_const_funcs::TO_CHURCH_BOOL;
 
 pub enum Term {
@@ -92,19 +90,20 @@ impl Clone for Term {
     }
 }
 
-trait ConstFuncInner: Fn(&Constant) -> Term + DynClone {}
-
-impl<F> ConstFuncInner for F where F: Fn(&Constant) -> Term + DynClone {}
-
 pub enum Constant {
     Error,
     Unit,
     Bool(bool),
     Int(u32),
-    Func {
+    /// Constant function with one argument.
+    Func1 {
         name: String,
-        #[allow(private_interfaces)]
-        f: Box<dyn ConstFuncInner>,
+        f: fn(&Constant) -> Term,
+    },
+    /// Constant function with two arguments.
+    Func2 {
+        name: String,
+        f: fn(&Constant, &Constant) -> Term,
     },
 }
 
@@ -115,7 +114,8 @@ impl Constant {
             Constant::Unit => String::from("Unit"),
             Constant::Bool(value) => format!("Bool({})", value),
             Constant::Int(value) => format!("Int({})", value),
-            Constant::Func { name, f: _ } => format!("Func(\"{}\")", name),
+            Constant::Func1 { name, f: _ } => format!("Func1(\"{}\")", name),
+            Constant::Func2 { name, f: _ } => format!("Func2(\"{}\")", name),
         }
     }
 }
@@ -127,9 +127,13 @@ impl Clone for Constant {
             Self::Unit => Self::Unit,
             Self::Bool(arg0) => Self::Bool(arg0.clone()),
             Self::Int(arg0) => Self::Int(arg0.clone()),
-            Self::Func { name, f } => Self::Func {
+            Self::Func1 { name, f } => Self::Func1 {
                 name: name.clone(),
-                f: dyn_clone::clone_box(&**f),
+                f: f.clone(),
+            },
+            Self::Func2 { name, f } => Self::Func2 {
+                name: name.clone(),
+                f: f.clone(),
             },
         }
     }
@@ -151,11 +155,19 @@ pub fn c_int(value: u32) -> Constant {
     Constant::Int(value)
 }
 
-#[allow(private_interfaces, private_bounds)]
-pub fn c_func(name: impl Into<String>, f: impl ConstFuncInner + 'static) -> Constant {
-    Constant::Func {
+/// Constant function with one argument.
+pub fn c_func1(name: impl Into<String>, f: fn(&Constant) -> Term) -> Constant {
+    Constant::Func1 {
         name: name.into(),
-        f: Box::new(f),
+        f,
+    }
+}
+
+/// Constant function with two argument.
+pub fn c_func2(name: impl Into<String>, f: fn(&Constant, &Constant) -> Term) -> Constant {
+    Constant::Func2 {
+        name: name.into(),
+        f,
     }
 }
 

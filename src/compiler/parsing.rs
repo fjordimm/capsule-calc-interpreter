@@ -3,9 +3,9 @@ use crate::{
         ADD, AND, DIV, EQ, GEQ, GT, LEQ, LT, MUL, NEQ, NOT, OR, SUB,
     },
     capsule_calc::{
-        c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const, t_lambda, t_var,
-        tt_composition, tt_if_then_else, tt_let_be_in, tt_letrec_be_in, tt_while_do, variable,
-        Constant, Term,
+        Constant, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
+        t_lambda, t_var, tt_composition, tt_if_then_else, tt_let_be_in, tt_letrec_be_in,
+        tt_while_do, variable,
     },
     compiler::lexing::Lexeme,
 };
@@ -370,7 +370,7 @@ mod tests {
         let Term::Application(Some(function), Some(_)) = partial.as_ref() else {
             panic!("expected a partially applied binary operator");
         };
-        let Term::Const(crate::capsule_calc::Constant::Func { name, .. }) = function.as_ref()
+        let Term::Const(crate::capsule_calc::Constant::Func2 { name, .. }) = function.as_ref()
         else {
             panic!("expected the operator function");
         };
@@ -405,7 +405,7 @@ mod tests {
         };
         assert!(matches!(
             function.as_ref(),
-            Term::Const(crate::capsule_calc::Constant::Func { name, .. }) if name == "NOT"
+            Term::Const(crate::capsule_calc::Constant::Func1 { name, .. }) if name == "NOT"
         ));
 
         assert!(matches!(*parse(&lex("x := 1")), Term::Assignment(_, _)));
@@ -424,7 +424,8 @@ mod tests {
 
     fn contains_function(term: &Term, expected_name: &str) -> bool {
         match term {
-            Term::Const(crate::capsule_calc::Constant::Func { name, .. }) => name == expected_name,
+            Term::Const(crate::capsule_calc::Constant::Func1 { name, .. }) => name == expected_name,
+            Term::Const(crate::capsule_calc::Constant::Func2 { name, .. }) => name == expected_name,
             Term::Application(Some(function), Some(argument)) => {
                 contains_function(function, expected_name)
                     || contains_function(argument, expected_name)
