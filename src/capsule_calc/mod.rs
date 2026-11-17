@@ -4,8 +4,8 @@ use crate::capsule_calc::collection_of_const_funcs::TO_CHURCH_BOOL;
 
 pub enum Term {
     Const(Const),
-    ConstFunc1(ConstFunc1),
-    ConstFunc2(ConstFunc2),
+    ConstFuncUnary(ConstFuncUnary),
+    ConstFuncBinary(ConstFuncBinary),
     Var(Variable),
     Lambda(Variable, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
@@ -16,12 +16,12 @@ pub fn t_const(value: Const) -> Term {
     Term::Const(value)
 }
 
-pub fn t_constfunc1(func: ConstFunc1) -> Term {
-    Term::ConstFunc1(func)
+pub fn t_constfunc_unary(func: ConstFuncUnary) -> Term {
+    Term::ConstFuncUnary(func)
 }
 
-pub fn t_constfunc2(func: ConstFunc2) -> Term {
-    Term::ConstFunc2(func)
+pub fn t_constfunc_binary(func: ConstFuncBinary) -> Term {
+    Term::ConstFuncBinary(func)
 }
 
 pub fn t_var(var: Variable) -> Term {
@@ -48,7 +48,7 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
     t_application(
         t_application(
             t_application(
-                t_application(t_constfunc1(TO_CHURCH_BOOL()), condition),
+                t_application(t_constfunc_unary(TO_CHURCH_BOOL()), condition),
                 t_lambda(variable("$_"), then_case),
             ),
             t_lambda(variable("$_"), else_case),
@@ -91,8 +91,8 @@ impl Clone for Term {
     fn clone(&self) -> Self {
         match self {
             Self::Const(c) => Self::Const(c.clone()),
-            Self::ConstFunc1(f) => Self::ConstFunc1(f.clone()),
-            Self::ConstFunc2(f) => Self::ConstFunc2(f.clone()),
+            Self::ConstFuncUnary(f) => Self::ConstFuncUnary(f.clone()),
+            Self::ConstFuncBinary(f) => Self::ConstFuncBinary(f.clone()),
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),
@@ -136,40 +136,38 @@ impl Const {
     }
 }
 
-/// Constant function with one argument.
 #[derive(Clone)]
-pub struct ConstFunc1 {
+pub struct ConstFuncUnary {
     name: String,
     f: fn(&Const) -> Term,
 }
 
-/// Constant function with two arguments.
 #[derive(Clone)]
-pub struct ConstFunc2 {
+pub struct ConstFuncBinary {
     name: String,
     f: fn(&Const, &Const) -> Term,
 }
 
-pub fn constfunc1(name: impl Into<String>, f: fn(&Const) -> Term) -> ConstFunc1 {
-    ConstFunc1 {
+pub fn constfunc_unary(name: impl Into<String>, f: fn(&Const) -> Term) -> ConstFuncUnary {
+    ConstFuncUnary {
         name: name.into(),
         f,
     }
 }
 
-pub fn constfunc2(name: impl Into<String>, f: fn(&Const, &Const) -> Term) -> ConstFunc2 {
-    ConstFunc2 {
+pub fn constfunc_binary(name: impl Into<String>, f: fn(&Const, &Const) -> Term) -> ConstFuncBinary {
+    ConstFuncBinary {
         name: name.into(),
         f,
     }
 }
-impl ConstFunc1 {
+impl ConstFuncUnary {
     pub fn as_str(&self) -> String {
         format!("`{}`", self.name)
     }
 }
 
-impl ConstFunc2 {
+impl ConstFuncBinary {
     pub fn as_str(&self) -> String {
         format!("`{}`", self.name)
     }

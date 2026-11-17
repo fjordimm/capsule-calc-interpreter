@@ -3,8 +3,8 @@ use crate::{
         ADD, AND, DIV, EQ, GEQ, GT, LEQ, LT, MUL, NEQ, NOT, OR, SUB,
     },
     capsule_calc::{
-        ConstFunc2, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
-        t_constfunc1, t_constfunc2, t_lambda, t_var, tt_composition, tt_if_then_else, tt_let_be_in,
+        ConstFuncBinary, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
+        t_constfunc_unary, t_constfunc_binary, t_lambda, t_var, tt_composition, tt_if_then_else, tt_let_be_in,
         tt_letrec_be_in, tt_while_do, variable,
     },
     compiler::lexing::Lexeme,
@@ -190,7 +190,7 @@ impl Parser<'_> {
     fn parse_left_associative(
         &mut self,
         parse_operand: impl Fn(&mut Self) -> Box<Term>,
-        get_operator: impl Fn(&Lexeme) -> Option<ConstFunc2>,
+        get_operator: impl Fn(&Lexeme) -> Option<ConstFuncBinary>,
     ) -> Box<Term> {
         let mut term = parse_operand(self);
 
@@ -217,7 +217,7 @@ impl Parser<'_> {
     fn parse_prefix(&mut self) -> Box<Term> {
         if matches!(self.peek(), Some(Lexeme::Bang)) {
             self.position += 1;
-            return Box::new(t_application(t_constfunc1(NOT()), *self.parse_prefix()));
+            return Box::new(t_application(t_constfunc_unary(NOT()), *self.parse_prefix()));
         }
 
         self.parse_atom()
@@ -272,8 +272,8 @@ impl Parser<'_> {
     }
 }
 
-fn apply_binary_operator(left: Term, right: Term, function: ConstFunc2) -> Term {
-    t_application(t_application(t_constfunc2(function), left), right)
+fn apply_binary_operator(left: Term, right: Term, function: ConstFuncBinary) -> Term {
+    t_application(t_application(t_constfunc_binary(function), left), right)
 }
 
 #[cfg(test)]
@@ -370,7 +370,7 @@ mod tests {
         let Term::Application(Some(function), Some(_)) = partial.as_ref() else {
             panic!("expected a partially applied binary operator");
         };
-        let Term::ConstFunc2(operator) = function.as_ref() else {
+        let Term::ConstFuncBinary(operator) = function.as_ref() else {
             panic!("expected the operator function");
         };
         operator.as_str()
@@ -402,7 +402,7 @@ mod tests {
         let Term::Application(Some(function), Some(_)) = not_term.as_ref() else {
             panic!("expected NOT application");
         };
-        let Term::ConstFunc1(operator) = function.as_ref() else {
+        let Term::ConstFuncUnary(operator) = function.as_ref() else {
             panic!("expected NOT constant function");
         };
         assert_eq!(operator.as_str(), "`NOT`");
@@ -423,8 +423,8 @@ mod tests {
 
     fn contains_function(term: &Term, expected_name: &str) -> bool {
         match term {
-            Term::ConstFunc1(function) => function.as_str() == format!("`{expected_name}`"),
-            Term::ConstFunc2(function) => function.as_str() == format!("`{expected_name}`"),
+            Term::ConstFuncUnary(function) => function.as_str() == format!("`{expected_name}`"),
+            Term::ConstFuncBinary(function) => function.as_str() == format!("`{expected_name}`"),
             Term::Application(Some(function), Some(argument)) => {
                 contains_function(function, expected_name)
                     || contains_function(argument, expected_name)

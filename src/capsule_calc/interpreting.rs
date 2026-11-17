@@ -1,15 +1,15 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    ConstFunc1, ConstFunc2, Environment, Term, Variable, c_error, c_unit, some_or_panic,
+    ConstFuncUnary, ConstFuncBinary, Environment, Term, Variable, c_error, c_unit, some_or_panic,
     some_or_panic_r, some_or_panic_rm, t_const, t_var,
 };
 
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
     match term.as_mut() {
         Term::Const(_) => {}
-        Term::ConstFunc1(_) => {}
-        Term::ConstFunc2(_) => {}
+        Term::ConstFuncUnary(_) => {}
+        Term::ConstFuncBinary(_) => {}
         Term::Var(var) => match environment.lookup(var) {
             None => **term = t_const(c_error()),
             Some(value) => *term = value.clone(),
@@ -25,14 +25,14 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
                 take_step(t2_s, environment);
             } else {
                 match (t1_s.as_mut(), t2_s.as_mut()) {
-                    (Term::ConstFunc1(ConstFunc1 { name: _, f }), Term::Const(arg)) => {
+                    (Term::ConstFuncUnary(ConstFuncUnary { name: _, f }), Term::Const(arg)) => {
                         **term = f(arg);
                     }
                     (Term::Application(it1, it2), Term::Const(arg2)) => {
                         let it1_s = some_or_panic_r(it1);
                         let it2_s = some_or_panic_r(it2);
 
-                        if let (Term::ConstFunc2(ConstFunc2 { name: _, f }), Term::Const(arg1)) =
+                        if let (Term::ConstFuncBinary(ConstFuncBinary { name: _, f }), Term::Const(arg1)) =
                             (it1_s.as_ref(), it2_s.as_ref())
                         {
                             **term = f(arg1, arg2);
@@ -75,11 +75,11 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
 pub fn is_irreducible(term: &Term) -> bool {
     match term {
         Term::Const(_) => true,
-        Term::ConstFunc1(_) => true,
-        Term::ConstFunc2(_) => true,
+        Term::ConstFuncUnary(_) => true,
+        Term::ConstFuncBinary(_) => true,
         Term::Lambda(_, _) => true,
         Term::Application(t1, t2) => match some_or_panic_r(t1).as_ref() {
-            Term::ConstFunc2(_) => is_irreducible(some_or_panic_r(t2)),
+            Term::ConstFuncBinary(_) => is_irreducible(some_or_panic_r(t2)),
             _ => false,
         },
         _ => false,
@@ -92,8 +92,8 @@ fn replace_var(term: &mut Option<Box<Term>>, original: &Variable, new: &Variable
 
     match term.as_mut() {
         Term::Const(_) => {}
-        Term::ConstFunc1(_) => {}
-        Term::ConstFunc2(_) => {}
+        Term::ConstFuncUnary(_) => {}
+        Term::ConstFuncBinary(_) => {}
         Term::Var(var) => {
             if var == original {
                 **term = t_var(new.clone());
