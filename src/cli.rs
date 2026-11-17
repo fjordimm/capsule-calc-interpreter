@@ -18,18 +18,92 @@ pub fn start_cli(mut term: Box<Term>, mut environment: Environment) -> io::Resul
         println!();
         println!("{}", display_capsule(&term, &environment));
         println!();
-        print!("Enter to take step. Q to end: ");
+        print!("Enter command, or `h` for help: ");
         io::stdout().flush()?;
 
         let mut input = String::new();
-        if stdin.read_line(&mut input)? == 0 || input.trim().eq_ignore_ascii_case("q") {
-            break;
+        loop {
+            input.clear();
+            if stdin.read_line(&mut input)? == 0 {
+                return Ok(());
+            }
+
+            match input.trim() {
+                "h" => {
+                    println!();
+                    println!("Commands:");
+                    println!("  Enter  Take a step and collect garbage");
+                    println!("  s      Take a step without collecting garbage");
+                    println!("  g      Collect garbage");
+                    #[rustfmt::skip]
+                    println!("  <n>    Take up to n steps, stopping if irreducible, and collect garbage");
+                    #[rustfmt::skip]
+                    println!("  <n>s   Take up to n steps, stopping if irreducible, without collecting garbage");
+                    println!("  h      Display this help message");
+                    println!("  q      Quit");
+                    println!();
+                    print!("Enter command, or `h` for help: ");
+                    io::stdout().flush()?;
+                }
+                "q" => return Ok(()),
+                "" => {
+                    take_step(&mut term, &mut environment);
+                    collect_garbage(&term, &mut environment);
+                    iteration += 1;
+                    break;
+                }
+                "s" => {
+                    take_step(&mut term, &mut environment);
+                    iteration += 1;
+                    break;
+                }
+                "g" => {
+                    collect_garbage(&term, &mut environment);
+                    break;
+                }
+                command if command.ends_with('s') => {
+                    let steps = command.strip_suffix('s').unwrap_or("");
+                    match steps.parse::<usize>() {
+                        Ok(steps) => {
+                            for _ in 0..steps {
+                                if is_irreducible(&term) {
+                                    break;
+                                }
+                                take_step(&mut term, &mut environment);
+                                iteration += 1;
+                            }
+                            break;
+                        }
+                        _ => {
+                            println!();
+                            println!("Unknown command.");
+                            println!();
+                            print!("Enter command, or `h` for help: ");
+                            io::stdout().flush()?;
+                        }
+                    }
+                }
+                command => match command.parse::<usize>() {
+                    Ok(steps) => {
+                        for _ in 0..steps {
+                            if is_irreducible(&term) {
+                                break;
+                            }
+                            take_step(&mut term, &mut environment);
+                            iteration += 1;
+                        }
+                        collect_garbage(&term, &mut environment);
+                        break;
+                    }
+                    _ => {
+                        println!();
+                        println!("Unknown command.");
+                        println!();
+                        print!("Enter command, or `h` for help: ");
+                        io::stdout().flush()?;
+                    }
+                },
+            }
         }
-
-        take_step(&mut term, &mut environment);
-        collect_garbage(&term, &mut environment);
-        iteration += 1;
     }
-
-    Ok(())
 }
