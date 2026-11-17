@@ -84,7 +84,7 @@ pub fn lex(input: &str) -> Vec<Lexeme> {
                 "be" => Lexeme::Be,
                 "in" => Lexeme::In,
                 "letrec" => Lexeme::Letrec,
-                "Error" => Lexeme::LitError,
+                "error" => Lexeme::LitError,
                 "unit" => Lexeme::LitUnit,
                 "true" => Lexeme::LitTrue,
                 "false" => Lexeme::LitFalse,

@@ -293,8 +293,8 @@ mod tests {
     #[test]
     fn parses_constants_and_variables() {
         let cases = [
-            ("error", "error"),
-            ("unit", "unit"),
+            ("error", "Error"),
+            ("unit", "Unit"),
             ("true", "Bool(true)"),
             ("false", "Bool(false)"),
             ("42", "Int(42)"),
@@ -414,7 +414,10 @@ mod tests {
             ("true && false", "AND"),
             ("true || false", "OR"),
         ] {
-            assert_eq!(binary_operator_name(&parse(&lex(source))), function_name);
+            assert_eq!(
+                binary_operator_name(&parse(&lex(source))),
+                format!("`{function_name}`")
+            );
         }
     }
 
@@ -435,12 +438,12 @@ mod tests {
     #[test]
     fn arithmetic_operators_have_conventional_precedence() {
         let term = parse(&lex("1 + 2 * 3"));
-        assert_eq!(binary_operator_name(&term), "ADD");
+        assert_eq!(binary_operator_name(&term), "`ADD`");
 
         let Term::Application(Some(_partial), Some(right)) = term.as_ref() else {
             panic!("expected ADD application");
         };
-        assert_eq!(binary_operator_name(right), "MUL");
+        assert_eq!(binary_operator_name(right), "`MUL`");
     }
 
     fn contains_function(term: &Term, expected_name: &str) -> bool {
@@ -472,17 +475,17 @@ mod tests {
     #[test]
     fn parses_if_then_else_and_while_do() {
         let conditional = parse(&lex("if true then 1 else 2"));
-        assert!(contains_function(&conditional, "ITE"));
+        assert!(contains_function(&conditional, "TO_CHURCH_BOOL"));
 
         let loop_term = parse(&lex("while false do unit"));
-        assert!(contains_function(&loop_term, "ITE"));
+        assert!(contains_function(&loop_term, "TO_CHURCH_BOOL"));
         assert!(contains_assignment(&loop_term));
     }
 
     #[test]
     fn parses_let_and_letrec_with_nested_terms() {
         let let_term = parse(&lex("let x be if true then 1 else 2 in x"));
-        assert!(contains_function(&let_term, "ITE"));
+        assert!(contains_function(&let_term, "TO_CHURCH_BOOL"));
         assert!(matches!(
             let_term.as_ref(),
             Term::Application(Some(binding), Some(_))
