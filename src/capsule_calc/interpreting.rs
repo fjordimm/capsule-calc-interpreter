@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    ConstFuncUnary, ConstFuncBinary, Environment, Term, Variable, c_error, c_unit, some_or_panic,
+    ConstFuncBinary, ConstFuncUnary, Environment, Term, Variable, c_error, c_unit, some_or_panic,
     some_or_panic_r, some_or_panic_rm, t_const, t_var,
 };
 
@@ -32,8 +32,10 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
                         let it1_s = some_or_panic_r(it1);
                         let it2_s = some_or_panic_r(it2);
 
-                        if let (Term::ConstFuncBinary(ConstFuncBinary { name: _, f }), Term::Const(arg1)) =
-                            (it1_s.as_ref(), it2_s.as_ref())
+                        if let (
+                            Term::ConstFuncBinary(ConstFuncBinary { name: _, f }),
+                            Term::Const(arg1),
+                        ) = (it1_s.as_ref(), it2_s.as_ref())
                         {
                             **term = f(arg1, arg2);
                         } else {
@@ -87,7 +89,7 @@ pub fn is_irreducible(term: &Term) -> bool {
 }
 
 /// Assumes `new` is a fresh variable.
-fn replace_var(term: &mut Option<Box<Term>>, original: &Variable, new: &Variable) {
+pub(super) fn replace_var(term: &mut Option<Box<Term>>, original: &Variable, new: &Variable) {
     let term = some_or_panic_rm(term);
 
     match term.as_mut() {

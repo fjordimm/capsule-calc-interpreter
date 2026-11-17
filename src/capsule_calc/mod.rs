@@ -256,3 +256,4 @@ pub mod collection_of_const_funcs;
 pub mod displaying;
 pub mod garbage_collection;
 pub mod interpreting;
+pub mod lazy_interpreting;
