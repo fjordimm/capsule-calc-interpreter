@@ -86,7 +86,7 @@ pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut LazyEnvironment) {
             LazyEnvironmentResult::Irreducible(value) => *term = value.clone(),
         },
         Term::Lambda(_, _) => {}
-        // TODO: application is not implemented correctly yet
+        // TODO: application is not lazy yet
         Term::Application(t1, t2) => {
             let t1_s = some_or_panic_rm(t1);
             let t2_s = some_or_panic_rm(t2);
@@ -122,7 +122,7 @@ pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut LazyEnvironment) {
 
                         let t2_substed = mem::replace(t2, None);
 
-                        // environment.add(fresh_var, some_or_panic(t2_substed));
+                        environment.add(fresh_var, some_or_panic(t2_substed));
                         *term = some_or_panic(body_substed);
                     }
                     _ => {

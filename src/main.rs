@@ -7,7 +7,7 @@ use capsule_calc_interpreter::{
 fn main() -> std::io::Result<()> {
     let input = std::fs::read_to_string("examples/test2.txt")?;
 
-    if true {
+    if false {
         let term = compile(&input);
         let environment = Environment::new();
 
@@ -25,6 +25,5 @@ fn main() -> std::io::Result<()> {
 // TODO: make fresh vars more readable (maybe have a counter instead of adding a `'`)
 // TODO: optimize when to do garbage collection
 // TODO: term equivalence tester
-// TODO: lazy evaluation
 // TODO: make a warning for if a user-defined variable is not [_a-zA-Z0-9]
 // TODO: test lazy eval with a cycle

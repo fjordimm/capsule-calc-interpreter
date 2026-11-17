@@ -231,7 +231,7 @@ impl Environment {
     }
 }
 
-/// Value of the HashMap represents (the term, if it's irreducible or not).
+/// Value of the HashMap represents the pair (the term, if it's irreducible or not).
 pub struct LazyEnvironment(HashMap<Var, (Box<Term>, bool)>);
 
 impl LazyEnvironment {
