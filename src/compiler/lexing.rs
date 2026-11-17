@@ -85,9 +85,9 @@ pub fn lex(input: &str) -> Vec<Lexeme> {
                 "in" => Lexeme::In,
                 "letrec" => Lexeme::Letrec,
                 "Error" => Lexeme::LitError,
-                "Unit" => Lexeme::LitUnit,
-                "True" => Lexeme::LitTrue,
-                "False" => Lexeme::LitFalse,
+                "unit" => Lexeme::LitUnit,
+                "true" => Lexeme::LitTrue,
+                "false" => Lexeme::LitFalse,
                 _ => Lexeme::Identifier(identifier),
             });
             continue;
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn recognizes_keywords_only_as_complete_identifiers() {
         assert_eq!(
-            lex("if then else while do let be in letrec Error Unit True False ifx"),
+            lex("if then else while do let be in letrec error unit true false ifx"),
             vec![
                 Lexeme::If,
                 Lexeme::Then,

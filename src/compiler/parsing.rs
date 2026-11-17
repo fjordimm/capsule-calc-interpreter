@@ -284,10 +284,10 @@ mod tests {
     #[test]
     fn parses_constants_and_variables() {
         let cases = [
-            ("Error", "Error"),
-            ("Unit", "Unit"),
-            ("True", "Bool(true)"),
-            ("False", "Bool(false)"),
+            ("error", "error"),
+            ("unit", "unit"),
+            ("true", "Bool(true)"),
+            ("false", "Bool(false)"),
             ("42", "Int(42)"),
         ];
 
@@ -389,8 +389,8 @@ mod tests {
             ("1 > 2", "GT"),
             ("1 <= 2", "LEQ"),
             ("1 >= 2", "GEQ"),
-            ("True && False", "AND"),
-            ("True || False", "OR"),
+            ("true && false", "AND"),
+            ("true || false", "OR"),
         ] {
             assert_eq!(binary_operator_name(&parse(&lex(source))), function_name);
         }
@@ -398,7 +398,7 @@ mod tests {
 
     #[test]
     fn parses_not_and_assignment() {
-        let not_term = parse(&lex("!True"));
+        let not_term = parse(&lex("!true"));
         let Term::Application(Some(function), Some(_)) = not_term.as_ref() else {
             panic!("expected NOT application");
         };
@@ -449,17 +449,17 @@ mod tests {
 
     #[test]
     fn parses_if_then_else_and_while_do() {
-        let conditional = parse(&lex("if True then 1 else 2"));
+        let conditional = parse(&lex("if true then 1 else 2"));
         assert!(contains_function(&conditional, "ITE"));
 
-        let loop_term = parse(&lex("while False do Unit"));
+        let loop_term = parse(&lex("while false do unit"));
         assert!(contains_function(&loop_term, "ITE"));
         assert!(contains_assignment(&loop_term));
     }
 
     #[test]
     fn parses_let_and_letrec_with_nested_terms() {
-        let let_term = parse(&lex("let x be if True then 1 else 2 in x"));
+        let let_term = parse(&lex("let x be if true then 1 else 2 in x"));
         assert!(contains_function(&let_term, "ITE"));
         assert!(matches!(
             let_term.as_ref(),
