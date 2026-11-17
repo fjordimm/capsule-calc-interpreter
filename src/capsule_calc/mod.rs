@@ -6,7 +6,6 @@ pub enum Term {
     Const(Const),
     ConstFunc1(ConstFunc1),
     ConstFunc2(ConstFunc2),
-    ConstFunc3(ConstFunc3),
     Var(Variable),
     Lambda(Variable, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
@@ -23,10 +22,6 @@ pub fn t_constfunc1(func: ConstFunc1) -> Term {
 
 pub fn t_constfunc2(func: ConstFunc2) -> Term {
     Term::ConstFunc2(func)
-}
-
-pub fn t_constfunc3(func: ConstFunc3) -> Term {
-    Term::ConstFunc3(func)
 }
 
 pub fn t_var(var: Variable) -> Term {
@@ -98,7 +93,6 @@ impl Clone for Term {
             Self::Const(c) => Self::Const(c.clone()),
             Self::ConstFunc1(f) => Self::ConstFunc1(f.clone()),
             Self::ConstFunc2(f) => Self::ConstFunc2(f.clone()),
-            Self::ConstFunc3(f) => Self::ConstFunc3(f.clone()),
             Self::Var(v) => Self::Var(v.clone()),
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),
@@ -156,13 +150,6 @@ pub struct ConstFunc2 {
     f: fn(&Const, &Const) -> Term,
 }
 
-/// Constant function with three arguments.
-#[derive(Clone)]
-pub struct ConstFunc3 {
-    name: String,
-    f: fn(&Const, &Const, &Const) -> Term,
-}
-
 pub fn constfunc1(name: impl Into<String>, f: fn(&Const) -> Term) -> ConstFunc1 {
     ConstFunc1 {
         name: name.into(),
@@ -176,14 +163,6 @@ pub fn constfunc2(name: impl Into<String>, f: fn(&Const, &Const) -> Term) -> Con
         f,
     }
 }
-
-pub fn constfunc3(name: impl Into<String>, f: fn(&Const, &Const, &Const) -> Term) -> ConstFunc3 {
-    ConstFunc3 {
-        name: name.into(),
-        f,
-    }
-}
-
 impl ConstFunc1 {
     pub fn as_str(&self) -> String {
         format!("`{}`", self.name)
@@ -191,12 +170,6 @@ impl ConstFunc1 {
 }
 
 impl ConstFunc2 {
-    pub fn as_str(&self) -> String {
-        format!("`{}`", self.name)
-    }
-}
-
-impl ConstFunc3 {
     pub fn as_str(&self) -> String {
         format!("`{}`", self.name)
     }

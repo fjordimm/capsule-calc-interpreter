@@ -25,7 +25,6 @@ fn free_vars(term: &Term) -> HashSet<&Variable> {
         Term::Const(_) => HashSet::new(),
         Term::ConstFunc1(_) => HashSet::new(),
         Term::ConstFunc2(_) => HashSet::new(),
-        Term::ConstFunc3(_) => HashSet::new(),
         Term::Var(var) => HashSet::from([var]),
         Term::Lambda(param, body) => {
             let mut vars = free_vars(some_or_panic_r(body));
