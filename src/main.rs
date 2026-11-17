@@ -9,7 +9,7 @@ fn main() -> std::io::Result<()> {
     start_cli(term, environment)
 }
 
-// TODO: make enum variant / step rule for ITE
+// TODO: make step rule for ITE
 // TODO: maybe use pairs instead of having a special step thing for constant functions with two args.
 // TODO: make fresh vars more readable (maybe have a counter instead of adding a `'`)
 // TODO: optimize when to do garbage collection

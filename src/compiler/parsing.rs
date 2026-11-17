@@ -129,11 +129,20 @@ impl Parser<'_> {
 
         while matches!(self.peek(), Some(Lexeme::Semicolon)) {
             self.position += 1;
-            let next_term = self.parse_assignment();
+            let next_term = self.parse_composition_operand();
             term = Box::new(tt_composition(*term, *next_term));
         }
 
         term
+    }
+
+    fn parse_composition_operand(&mut self) -> Box<Term> {
+        match self.peek() {
+            Some(Lexeme::Backslash | Lexeme::If | Lexeme::While | Lexeme::Let | Lexeme::Letrec) => {
+                self.parse_term()
+            }
+            _ => self.parse_assignment(),
+        }
     }
 
     fn parse_or(&mut self) -> Box<Term> {
@@ -361,6 +370,19 @@ mod tests {
             body.as_ref(),
             Term::Var(variable) if variable.as_str() == "b"
         ));
+    }
+
+    #[test]
+    fn parses_conditional_as_composition_operand() {
+        let term = parse(&lex("3 ; if true then 1 else 2"));
+        let Term::Application(Some(function), Some(argument)) = term.as_ref() else {
+            panic!("expected composition application");
+        };
+        assert!(matches!(argument.as_ref(), Term::Const(_)));
+        let Term::Lambda(_, Some(body)) = function.as_ref() else {
+            panic!("expected composition lambda");
+        };
+        assert!(contains_function(body, "TO_CHURCH_BOOL"));
     }
 
     fn binary_operator_name(term: &Term) -> String {
