@@ -6,10 +6,10 @@ pub enum Term {
     Const(Const),
     ConstFuncUnary(ConstFuncUnary),
     ConstFuncBinary(ConstFuncBinary),
-    Var(Variable),
-    Lambda(Variable, Option<Box<Term>>),
+    Var(Var),
+    Lambda(Var, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
-    Assignment(Variable, Option<Box<Term>>),
+    Assignment(Var, Option<Box<Term>>),
 }
 
 pub fn t_const(value: Const) -> Term {
@@ -24,11 +24,11 @@ pub fn t_constfunc_binary(func: ConstFuncBinary) -> Term {
     Term::ConstFuncBinary(func)
 }
 
-pub fn t_var(var: Variable) -> Term {
+pub fn t_var(var: Var) -> Term {
     Term::Var(var)
 }
 
-pub fn t_lambda(param: Variable, body: Term) -> Term {
+pub fn t_lambda(param: Var, body: Term) -> Term {
     Term::Lambda(param, Some(Box::new(body)))
 }
 
@@ -36,12 +36,12 @@ pub fn t_application(t1: Term, t2: Term) -> Term {
     Term::Application(Some(Box::new(t1)), Some(Box::new(t2)))
 }
 
-pub fn t_assignment(var: Variable, value: Term) -> Term {
+pub fn t_assignment(var: Var, value: Term) -> Term {
     Term::Assignment(var, Some(Box::new(value)))
 }
 
 pub fn tt_composition(t1: Term, t2: Term) -> Term {
-    t_application(t_lambda(variable("$_"), t2), t1)
+    t_application(t_lambda(var("$_"), t2), t1)
 }
 
 pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
@@ -49,9 +49,9 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
         t_application(
             t_application(
                 t_application(t_constfunc_unary(TO_CHURCH_BOOL()), condition),
-                t_lambda(variable("$_"), then_case),
+                t_lambda(var("$_"), then_case),
             ),
-            t_lambda(variable("$_"), else_case),
+            t_lambda(var("$_"), else_case),
         ),
         t_const(c_unit()),
     )
@@ -59,27 +59,24 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
 
 pub fn tt_while_do(condition: Term, body: Term) -> Term {
     tt_letrec_be_in(
-        variable("$w"),
+        var("$w"),
         t_lambda(
-            variable("$x"),
+            var("$x"),
             tt_if_then_else(
                 condition,
-                tt_composition(
-                    body,
-                    t_application(t_var(variable("$w")), t_const(c_unit())),
-                ),
+                tt_composition(body, t_application(t_var(var("$w")), t_const(c_unit()))),
                 t_const(c_unit()),
             ),
         ),
-        t_application(t_var(variable("$w")), t_const(c_unit())),
+        t_application(t_var(var("$w")), t_const(c_unit())),
     )
 }
 
-pub fn tt_let_be_in(var: Variable, value: Term, term: Term) -> Term {
+pub fn tt_let_be_in(var: Var, value: Term, term: Term) -> Term {
     t_application(t_lambda(var, term), value)
 }
 
-pub fn tt_letrec_be_in(var: Variable, value: Term, term: Term) -> Term {
+pub fn tt_letrec_be_in(var: Var, value: Term, term: Term) -> Term {
     t_application(
         t_lambda(var.clone(), tt_composition(t_assignment(var, value), term)),
         t_const(c_unit()),
@@ -174,59 +171,59 @@ impl ConstFuncBinary {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct Variable(String);
+pub struct Var(String);
 
-pub fn variable(name: impl Into<String>) -> Variable {
-    Variable(name.into())
+pub fn var(name: impl Into<String>) -> Var {
+    Var(name.into())
 }
 
-impl Variable {
+impl Var {
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 // TODO: Is it fine that this is an unordered map? I think so...
-pub struct Environment(HashMap<Variable, Box<Term>>);
+pub struct Environment(HashMap<Var, Box<Term>>);
 
 impl Environment {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn with(mut self, variable: Variable, value: Term) -> Self {
+    pub fn with(mut self, variable: Var, value: Term) -> Self {
         self.add(variable, Box::new(value));
         self
     }
 
-    pub fn add(&mut self, variable: Variable, value: Box<Term>) {
+    pub fn add(&mut self, variable: Var, value: Box<Term>) {
         self.0.insert(variable, value);
     }
 
-    pub fn lookup(&self, variable: &Variable) -> Option<&Box<Term>> {
+    pub fn lookup(&self, variable: &Var) -> Option<&Box<Term>> {
         self.0.get(variable)
     }
 
-    pub fn remove(&mut self, variable: &Variable) {
+    pub fn remove(&mut self, variable: &Var) {
         self.0.remove(variable);
     }
 
-    pub fn fresh_var(&self) -> Variable {
+    pub fn fresh_var(&self) -> Var {
         loop {
-            let candidate = variable(format!("${}", rand::random::<u64>()));
+            let candidate = var(format!("${}", rand::random::<u64>()));
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
         }
     }
 
-    pub fn fresh_var_based_on(&self, old: &Variable) -> Variable {
-        let mut candidate = variable(format!("{}'", old.0));
+    pub fn fresh_var_based_on(&self, old: &Var) -> Var {
+        let mut candidate = var(format!("{}'", old.0));
         loop {
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
-            candidate = variable(format!("{}'", candidate.0));
+            candidate = var(format!("{}'", candidate.0));
         }
     }
 }

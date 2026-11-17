@@ -106,13 +106,13 @@ pub fn display_environment(env: &Environment) -> String {
 #[cfg(test)]
 mod tests {
     use super::display_term;
-    use crate::capsule_calc::{t_application, t_var, variable};
+    use crate::capsule_calc::{t_application, t_var, var};
 
     #[test]
     fn displays_nested_branches_with_indentation_prefixes() {
         let term = t_application(
-            t_var(variable("f")),
-            t_application(t_var(variable("x")), t_var(variable("y"))),
+            t_var(var("f")),
+            t_application(t_var(var("x")), t_var(var("y"))),
         );
 
         assert_eq!(

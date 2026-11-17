@@ -1,7 +1,7 @@
 use std::{collections::HashMap, mem};
 
 use crate::capsule_calc::{
-    ConstFuncBinary, ConstFuncUnary, Environment, Term, Variable, c_error, c_unit,
+    ConstFuncBinary, ConstFuncUnary, Environment, Term, Var, c_error, c_unit,
     interpreting::{is_irreducible, replace_var},
     some_or_panic, some_or_panic_r, some_or_panic_rm, t_const,
 };
@@ -76,4 +76,4 @@ pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut Environment) {
     }
 }
 
-struct LazyVars(HashMap<Variable, Box<Term>>);
+struct LazyVars(HashMap<Var, Box<Term>>);

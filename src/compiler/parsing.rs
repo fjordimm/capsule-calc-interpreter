@@ -5,7 +5,7 @@ use crate::{
     capsule_calc::{
         ConstFuncBinary, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
         t_constfunc_unary, t_constfunc_binary, t_lambda, t_var, tt_composition, tt_if_then_else, tt_let_be_in,
-        tt_letrec_be_in, tt_while_do, variable,
+        tt_letrec_be_in, tt_while_do, var,
     },
     compiler::lexing::Lexeme,
 };
@@ -71,7 +71,7 @@ impl Parser<'_> {
         );
 
         let bound_variable = match self.next() {
-            Some(Lexeme::Identifier(name)) => variable(name.clone()),
+            Some(Lexeme::Identifier(name)) => var(name.clone()),
             token => panic!("Expected identifier after let, found {token:?}"),
         };
         self.expect_keyword(Lexeme::Be, "be");
@@ -96,7 +96,7 @@ impl Parser<'_> {
     fn parse_lambda(&mut self) -> Box<Term> {
         self.position += 1;
         let parameter = match self.next() {
-            Some(Lexeme::Identifier(name)) => variable(name.clone()),
+            Some(Lexeme::Identifier(name)) => var(name.clone()),
             token => panic!("Expected lambda parameter, found {token:?}"),
         };
 
@@ -247,7 +247,7 @@ impl Parser<'_> {
             Some(Lexeme::LitTrue) => Box::new(t_const(c_bool(true))),
             Some(Lexeme::LitFalse) => Box::new(t_const(c_bool(false))),
             Some(Lexeme::LitNum(value)) => Box::new(t_const(c_int(*value))),
-            Some(Lexeme::Identifier(name)) => Box::new(t_var(variable(name.clone()))),
+            Some(Lexeme::Identifier(name)) => Box::new(t_var(var(name.clone()))),
             token => panic!("Expected a term, found {token:?}"),
         }
     }

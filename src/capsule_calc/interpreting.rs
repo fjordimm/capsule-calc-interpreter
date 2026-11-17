@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    ConstFuncBinary, ConstFuncUnary, Environment, Term, Variable, c_error, c_unit, some_or_panic,
+    ConstFuncBinary, ConstFuncUnary, Environment, Term, Var, c_error, c_unit, some_or_panic,
     some_or_panic_r, some_or_panic_rm, t_const, t_var,
 };
 
@@ -89,7 +89,7 @@ pub fn is_irreducible(term: &Term) -> bool {
 }
 
 /// Assumes `new` is a fresh variable.
-pub(super) fn replace_var(term: &mut Option<Box<Term>>, original: &Variable, new: &Variable) {
+pub(super) fn replace_var(term: &mut Option<Box<Term>>, original: &Var, new: &Var) {
     let term = some_or_panic_rm(term);
 
     match term.as_mut() {

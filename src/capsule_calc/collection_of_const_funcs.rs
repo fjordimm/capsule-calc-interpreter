@@ -2,7 +2,7 @@
 
 use crate::capsule_calc::{
     Const, ConstFuncUnary, ConstFuncBinary, c_bool, c_error, c_int, constfunc_unary, constfunc_binary, t_const,
-    t_lambda, t_var, variable,
+    t_lambda, t_var, var,
 };
 
 pub fn INCR() -> ConstFuncUnary {
@@ -129,12 +129,12 @@ pub fn OR() -> ConstFuncBinary {
 pub fn TO_CHURCH_BOOL() -> ConstFuncUnary {
     constfunc_unary("TO_CHURCH_BOOL", |inp| match inp {
         Const::Bool(true) => t_lambda(
-            variable("$first"),
-            t_lambda(variable("$second"), t_var(variable("$first"))),
+            var("$first"),
+            t_lambda(var("$second"), t_var(var("$first"))),
         ),
         Const::Bool(false) => t_lambda(
-            variable("$first"),
-            t_lambda(variable("$second"), t_var(variable("$second"))),
+            var("$first"),
+            t_lambda(var("$second"), t_var(var("$second"))),
         ),
         _ => t_const(c_error()),
     })

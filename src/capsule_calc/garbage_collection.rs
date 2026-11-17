@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
-use crate::capsule_calc::{Environment, Term, Variable, some_or_panic_r};
+use crate::capsule_calc::{Environment, Term, Var, some_or_panic_r};
 
 /// Uses a tracing mark-and-sweep method.
 pub fn collect_garbage(term: &Term, environment: &mut Environment) {
     let mut vars_in_question = free_vars(term).into_iter().cloned().collect::<Vec<_>>();
-    let mut visited_vars = HashSet::<Variable>::new();
+    let mut visited_vars = HashSet::<Var>::new();
 
     while let Some(var) = vars_in_question.pop() {
         if !visited_vars.insert(var.clone()) {
@@ -20,7 +20,7 @@ pub fn collect_garbage(term: &Term, environment: &mut Environment) {
     environment.0.retain(|var, _| visited_vars.contains(var));
 }
 
-fn free_vars(term: &Term) -> HashSet<&Variable> {
+fn free_vars(term: &Term) -> HashSet<&Var> {
     match term {
         Term::Const(_) => HashSet::new(),
         Term::ConstFuncUnary(_) => HashSet::new(),
@@ -43,14 +43,14 @@ fn free_vars(term: &Term) -> HashSet<&Variable> {
 #[cfg(test)]
 mod tests {
     use super::collect_garbage;
-    use crate::capsule_calc::{Environment, Term, c_unit, t_var, variable};
+    use crate::capsule_calc::{Environment, Term, c_unit, t_var, var};
 
     #[test]
     fn keeps_reachable_bindings_and_collects_unreachable_cycles() {
-        let a = variable("a");
-        let b = variable("b");
-        let x = variable("x");
-        let y = variable("y");
+        let a = var("a");
+        let b = var("b");
+        let x = var("x");
+        let y = var("y");
         let mut environment = Environment::new()
             .with(a.clone(), t_var(b.clone()))
             .with(b.clone(), Term::Const(c_unit()))
