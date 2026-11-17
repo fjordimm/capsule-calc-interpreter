@@ -1,10 +1,21 @@
-use crate::capsule_calc::{Environment, Term, some_or_panic_r};
+use crate::capsule_calc::{Environment, LazyEnvironment, Term, some_or_panic_r};
 
 pub fn display_capsule(term: &Term, environment: &Environment) -> String {
     let mut display = String::new();
 
     display.push_str("=======Environment=======\n");
     display.push_str(&display_environment(environment));
+    display.push_str("\n=======Term=======\n");
+    display.push_str(&display_term(term));
+
+    display
+}
+
+pub fn display_lazy_capsule(term: &Term, environment: &LazyEnvironment) -> String {
+    let mut display = String::new();
+
+    display.push_str("=======Environment=======\n");
+    display.push_str(&display_lazy_environment(environment));
     display.push_str("\n=======Term=======\n");
     display.push_str(&display_term(term));
 
@@ -103,16 +114,35 @@ pub fn display_environment(env: &Environment) -> String {
     }
 }
 
+pub fn display_lazy_environment(env: &LazyEnvironment) -> String {
+    if env.0.is_empty() {
+        String::from("(empty)\n")
+    } else {
+        let mut display = String::new();
+
+        env.0.iter().for_each(|(var, term)| {
+            display.push_str(&format!("{} :=\n", var.as_str()));
+            display.push_str(&display_term_with_indent(
+                term.0.as_ref(),
+                String::from("  "),
+            ));
+            display.push('\n');
+        });
+
+        display
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::display_term;
-    use crate::capsule_calc::{t_application, t_var, var};
+    use crate::capsule_calc::{t_application, t_var, v_var};
 
     #[test]
     fn displays_nested_branches_with_indentation_prefixes() {
         let term = t_application(
-            t_var(var("f")),
-            t_application(t_var(var("x")), t_var(var("y"))),
+            t_var(v_var("f")),
+            t_application(t_var(v_var("x")), t_var(v_var("y"))),
         );
 
         assert_eq!(

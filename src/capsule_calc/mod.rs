@@ -1,6 +1,9 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::capsule_calc::collection_of_const_funcs::TO_CHURCH_BOOL;
+use crate::capsule_calc::{
+    collection_of_const_funcs::TO_CHURCH_BOOL,
+    interpreting::{is_irreducible, take_step_lazy},
+};
 
 pub enum Term {
     Const(Const),
@@ -41,7 +44,7 @@ pub fn t_assignment(var: Var, value: Term) -> Term {
 }
 
 pub fn tt_composition(t1: Term, t2: Term) -> Term {
-    t_application(t_lambda(var("$_"), t2), t1)
+    t_application(t_lambda(v_var("$_"), t2), t1)
 }
 
 pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
@@ -49,9 +52,9 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
         t_application(
             t_application(
                 t_application(t_constfunc_unary(TO_CHURCH_BOOL()), condition),
-                t_lambda(var("$_"), then_case),
+                t_lambda(v_var("$_"), then_case),
             ),
-            t_lambda(var("$_"), else_case),
+            t_lambda(v_var("$_"), else_case),
         ),
         t_const(c_unit()),
     )
@@ -59,16 +62,16 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
 
 pub fn tt_while_do(condition: Term, body: Term) -> Term {
     tt_letrec_be_in(
-        var("$w"),
+        v_var("$w"),
         t_lambda(
-            var("$x"),
+            v_var("$x"),
             tt_if_then_else(
                 condition,
-                tt_composition(body, t_application(t_var(var("$w")), t_const(c_unit()))),
+                tt_composition(body, t_application(t_var(v_var("$w")), t_const(c_unit()))),
                 t_const(c_unit()),
             ),
         ),
-        t_application(t_var(var("$w")), t_const(c_unit())),
+        t_application(t_var(v_var("$w")), t_const(c_unit())),
     )
 }
 
@@ -173,7 +176,7 @@ impl ConstFuncBinary {
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Var(String);
 
-pub fn var(name: impl Into<String>) -> Var {
+pub fn v_var(name: impl Into<String>) -> Var {
     Var(name.into())
 }
 
@@ -196,21 +199,21 @@ impl Environment {
         self
     }
 
-    pub fn add(&mut self, variable: Var, value: Box<Term>) {
-        self.0.insert(variable, value);
+    pub fn add(&mut self, var: Var, value: Box<Term>) {
+        self.0.insert(var, value);
     }
 
-    pub fn lookup(&self, variable: &Var) -> Option<&Box<Term>> {
-        self.0.get(variable)
+    pub fn lookup(&self, var: &Var) -> Option<&Box<Term>> {
+        self.0.get(var)
     }
 
-    pub fn remove(&mut self, variable: &Var) {
-        self.0.remove(variable);
+    pub fn remove(&mut self, var: &Var) {
+        self.0.remove(var);
     }
 
     pub fn fresh_var(&self) -> Var {
         loop {
-            let candidate = var(format!("${}", rand::random::<u64>()));
+            let candidate = v_var(format!("${}", rand::random::<u64>()));
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
@@ -218,14 +221,85 @@ impl Environment {
     }
 
     pub fn fresh_var_based_on(&self, old: &Var) -> Var {
-        let mut candidate = var(format!("{}'", old.0));
+        let mut candidate = v_var(format!("{}'", old.as_str()));
         loop {
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
-            candidate = var(format!("{}'", candidate.0));
+            candidate = v_var(format!("{}'", candidate.as_str()));
         }
     }
+}
+
+/// Value of the HashMap represents (the term, if it's irreducible or not).
+pub struct LazyEnvironment(HashMap<Var, (Box<Term>, bool)>);
+
+impl LazyEnvironment {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    pub fn add(&mut self, var: Var, value: Box<Term>) {
+        self.0.insert(var, (value, false));
+    }
+
+    pub fn lookup_without_eval(&self, var: &Var) -> Option<&(Box<Term>, bool)> {
+        self.0.get(var)
+    }
+
+    pub fn lookup_and_eval(&mut self, var: &Var) -> LazyEnvironmentResult<'_> {
+        match self.0.get(var) {
+            None => LazyEnvironmentResult::Error,
+            Some((value, _)) => {
+                if is_irreducible(value.as_ref()) {
+                    if let Some((value, is_irred)) = self.0.get_mut(var) {
+                        *is_irred = true;
+                        LazyEnvironmentResult::Irreducible(value)
+                    } else {
+                        panic!("This shouldn't happen.")
+                    }
+                } else {
+                    if let Some((mut value, _)) = self.0.remove(var) {
+                        take_step_lazy(&mut value, self);
+                        self.0.insert(var.clone(), (value, false));
+
+                        LazyEnvironmentResult::Reducible
+                    } else {
+                        panic!("This shouldn't happen.")
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn remove(&mut self, var: &Var) {
+        self.0.remove(var);
+    }
+
+    pub fn fresh_var(&self) -> Var {
+        loop {
+            let candidate = v_var(format!("${}", rand::random::<u64>()));
+            if !self.0.contains_key(&candidate) {
+                return candidate;
+            }
+        }
+    }
+
+    pub fn fresh_var_based_on(&self, old: &Var) -> Var {
+        let mut candidate = v_var(format!("{}'", old.as_str()));
+        loop {
+            if !self.0.contains_key(&candidate) {
+                return candidate;
+            }
+            candidate = v_var(format!("{}'", candidate.as_str()));
+        }
+    }
+}
+
+pub enum LazyEnvironmentResult<'a> {
+    Error,
+    Reducible,
+    Irreducible(&'a Box<Term>),
 }
 
 fn some_or_panic(t: Option<Box<Term>>) -> Box<Term> {
@@ -253,4 +327,3 @@ pub mod collection_of_const_funcs;
 pub mod displaying;
 pub mod garbage_collection;
 pub mod interpreting;
-pub mod lazy_interpreting;
