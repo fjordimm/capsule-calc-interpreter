@@ -231,7 +231,7 @@ impl Environment {
     }
 
     /// For lazy evaluation.
-    pub fn lookup_or_reduce(&mut self, var: &Var) -> LazyEnvironmentResult<'_> {
+    pub fn lookup_or_step(&mut self, var: &Var) -> LazyEnvironmentResult<'_> {
         match self.0.get(var) {
             None => LazyEnvironmentResult::NotFound,
             Some(env_term) => {
