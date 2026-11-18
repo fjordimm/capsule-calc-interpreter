@@ -1,8 +1,8 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    ConstFuncBinary, ConstFuncUnary, Environment, LazyEnvironment, LazyEnvironmentResult, Term,
-    Var, c_error, c_unit, some_or_panic, some_or_panic_r, some_or_panic_rm, t_const, t_var,
+    ConstFuncBinary, ConstFuncUnary, Environment, LazyEnvironmentResult, Term, Var, c_error,
+    c_unit, some_or_panic, some_or_panic_r, some_or_panic_rm, t_const, t_var,
 };
 
 pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
@@ -50,7 +50,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
 
                         let t2_substed = mem::replace(t2, None);
 
-                        environment.add(fresh_var, some_or_panic(t2_substed));
+                        environment.add_irreducible(fresh_var, some_or_panic(t2_substed));
                         *term = some_or_panic(body_substed);
                     }
                     _ => {
@@ -67,7 +67,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
             } else {
                 let value_substed = mem::replace(value, None);
 
-                environment.add(var.clone(), some_or_panic(value_substed));
+                environment.add_irreducible(var.clone(), some_or_panic(value_substed));
                 **term = t_const(c_unit());
             }
         }
@@ -75,7 +75,7 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
 }
 
 /// WARNING: Won't necessarily evaluate correctly.
-pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut LazyEnvironment) {
+pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut Environment) {
     match term.as_mut() {
         Term::Const(_) => {}
         Term::ConstFuncUnary(_) => {}

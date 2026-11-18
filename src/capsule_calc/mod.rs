@@ -44,7 +44,7 @@ pub fn t_assignment(var: Var, value: Term) -> Term {
 }
 
 pub fn tt_composition(t1: Term, t2: Term) -> Term {
-    t_application(t_lambda(v_var("$_"), t2), t1)
+    t_application(t_lambda(v_new("$_"), t2), t1)
 }
 
 pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
@@ -52,9 +52,9 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
         t_application(
             t_application(
                 t_application(t_constfunc_unary(TO_CHURCH_BOOL()), condition),
-                t_lambda(v_var("$_"), then_case),
+                t_lambda(v_new("$_"), then_case),
             ),
-            t_lambda(v_var("$_"), else_case),
+            t_lambda(v_new("$_"), else_case),
         ),
         t_const(c_unit()),
     )
@@ -62,16 +62,16 @@ pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Ter
 
 pub fn tt_while_do(condition: Term, body: Term) -> Term {
     tt_letrec_be_in(
-        v_var("$w"),
+        v_new("$w"),
         t_lambda(
-            v_var("$x"),
+            v_new("$x"),
             tt_if_then_else(
                 condition,
-                tt_composition(body, t_application(t_var(v_var("$w")), t_const(c_unit()))),
+                tt_composition(body, t_application(t_var(v_new("$w")), t_const(c_unit()))),
                 t_const(c_unit()),
             ),
         ),
-        t_application(t_var(v_var("$w")), t_const(c_unit())),
+        t_application(t_var(v_new("$w")), t_const(c_unit())),
     )
 }
 
@@ -176,7 +176,7 @@ impl ConstFuncBinary {
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Var(String);
 
-pub fn v_var(name: impl Into<String>) -> Var {
+pub fn v_new(name: impl Into<String>) -> Var {
     Var(name.into())
 }
 
@@ -186,86 +186,78 @@ impl Var {
     }
 }
 
-// TODO: Is it fine that this is an unordered map? I think so...
-pub struct Environment(HashMap<Var, Box<Term>>);
+pub struct Environment(HashMap<Var, EnvironmentTerm>);
 
 impl Environment {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn with(mut self, variable: Var, value: Term) -> Self {
-        self.add(variable, Box::new(value));
+    pub fn with(mut self, variable: Var, val: Term) -> Self {
+        self.add_irreducible(variable, Box::new(val));
         self
     }
 
-    pub fn add(&mut self, var: Var, value: Box<Term>) {
-        self.0.insert(var, value);
+    /// Assumes val is irreducible.
+    pub fn add_irreducible(&mut self, var: Var, val: Box<Term>) {
+        self.0.insert(
+            var,
+            EnvironmentTerm {
+                term: val,
+                is_irred: true,
+            },
+        );
     }
 
+    /// Should never be used if doing call-by-value.
+    pub fn add_possibly_reducible(&mut self, var: Var, val: Box<Term>) {
+        let is_irred = is_irreducible(val.as_ref());
+
+        self.0.insert(
+            var,
+            EnvironmentTerm {
+                term: val,
+                is_irred: is_irred,
+            },
+        );
+    }
+
+    /// Mainly for call-by-value.
     pub fn lookup(&self, var: &Var) -> Option<&Box<Term>> {
-        self.0.get(var)
-    }
-
-    pub fn remove(&mut self, var: &Var) {
-        self.0.remove(var);
-    }
-
-    pub fn fresh_var(&self) -> Var {
-        loop {
-            let candidate = v_var(format!("${}", rand::random::<u64>()));
-            if !self.0.contains_key(&candidate) {
-                return candidate;
-            }
-        }
-    }
-
-    pub fn fresh_var_based_on(&self, old: &Var) -> Var {
-        let mut candidate = v_var(format!("{}'", old.as_str()));
-        loop {
-            if !self.0.contains_key(&candidate) {
-                return candidate;
-            }
-            candidate = v_var(format!("{}'", candidate.as_str()));
-        }
-    }
-}
-
-/// Value of the HashMap represents the pair (the term, if it's irreducible or not).
-pub struct LazyEnvironment(HashMap<Var, (Box<Term>, bool)>);
-
-impl LazyEnvironment {
-    pub fn new() -> Self {
-        Self(HashMap::new())
-    }
-
-    pub fn add(&mut self, var: Var, value: Box<Term>) {
-        self.0.insert(var, (value, false));
-    }
-
-    pub fn lookup_without_eval(&self, var: &Var) -> Option<&(Box<Term>, bool)> {
-        self.0.get(var)
-    }
-
-    pub fn lookup_and_eval(&mut self, var: &Var) -> LazyEnvironmentResult<'_> {
         match self.0.get(var) {
-            None => LazyEnvironmentResult::Error,
-            Some((value, _)) => {
-                if is_irreducible(value.as_ref()) {
-                    if let Some((value, is_irred)) = self.0.get_mut(var) {
-                        *is_irred = true;
-                        LazyEnvironmentResult::Irreducible(value)
+            None => None,
+            Some(e) => Some(&e.term),
+        }
+    }
+
+    /// For lazy evaluation.
+    pub fn lookup_or_reduce(&mut self, var: &Var) -> LazyEnvironmentResult<'_> {
+        match self.0.get(var) {
+            None => LazyEnvironmentResult::NotFound,
+            Some(env_term) => {
+                if env_term.is_irred {
+                    if let Some(env_term) = self.0.get(var) {
+                        LazyEnvironmentResult::Irreducible(&env_term.term)
                     } else {
-                        panic!("This shouldn't happen.")
+                        panic!("This should never happen.")
                     }
                 } else {
-                    if let Some((mut value, _)) = self.0.remove(var) {
-                        take_step_lazy(&mut value, self);
-                        self.0.insert(var.clone(), (value, false));
+                    if let Some(mut env_term) = self.0.remove(var) {
+                        take_step_lazy(&mut env_term.term, self);
+
+                        let new_is_irred = is_irreducible(env_term.term.as_ref());
+
+                        self.0.insert(
+                            var.clone(),
+                            EnvironmentTerm {
+                                term: env_term.term,
+                                is_irred: new_is_irred,
+                            },
+                        );
 
                         LazyEnvironmentResult::Reducible
                     } else {
-                        panic!("This shouldn't happen.")
+                        panic!("This should never happen.")
                     }
                 }
             }
@@ -278,7 +270,7 @@ impl LazyEnvironment {
 
     pub fn fresh_var(&self) -> Var {
         loop {
-            let candidate = v_var(format!("${}", rand::random::<u64>()));
+            let candidate = v_new(format!("${}", rand::random::<u64>()));
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
@@ -286,18 +278,23 @@ impl LazyEnvironment {
     }
 
     pub fn fresh_var_based_on(&self, old: &Var) -> Var {
-        let mut candidate = v_var(format!("{}'", old.as_str()));
+        let mut candidate = v_new(format!("{}'", old.as_str()));
         loop {
             if !self.0.contains_key(&candidate) {
                 return candidate;
             }
-            candidate = v_var(format!("{}'", candidate.as_str()));
+            candidate = v_new(format!("{}'", candidate.as_str()));
         }
     }
 }
 
+struct EnvironmentTerm {
+    term: Box<Term>,
+    is_irred: bool,
+}
+
 pub enum LazyEnvironmentResult<'a> {
-    Error,
+    NotFound,
     Reducible,
     Irreducible(&'a Box<Term>),
 }
