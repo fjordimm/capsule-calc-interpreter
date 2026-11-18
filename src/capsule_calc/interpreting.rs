@@ -138,65 +138,6 @@ pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut Environment) {
                     }
                 }
             }
-
-            /*
-            if !is_irreducible(t1_s) {
-                take_step_lazy(t1_s, environment);
-            } else {
-                match t1_s.as_mut() {
-                    Term::ConstFuncUnary(ConstFuncUnary { name: _, f }) => {
-                        if !is_irreducible(t2_s) {
-                            take_step_lazy(t2_s, environment);
-                        } else {
-                            match t2_s.as_mut() {
-                                Term::Const(arg) => **term = f(arg),
-                                _ => **term = t_const(c_error()),
-                            }
-                        }
-                    }
-                    Term::Application(it1, it2) => {
-                        let it1_s = some_or_panic_r(it1);
-                        let it2_s = some_or_panic_rm(it2);
-
-                        if let Term::ConstFuncBinary(ConstFuncBinary { name: _, f }) =
-                            it1_s.as_ref()
-                        {
-                            if !is_irreducible(it2_s) {
-                                take_step_lazy(it2_s, environment);
-                            } else {
-                                match it2_s.as_mut() {
-                                    Term::Const(arg1) => {
-                                        if !is_irreducible(t2_s) {
-                                            take_step_lazy(t2_s, environment);
-                                        } else {
-                                            match t2_s.as_mut() {
-                                                Term::Const(arg2) => **term = f(arg1, arg2),
-                                                _ => **term = t_const(c_error()),
-                                            }
-                                        }
-                                    }
-                                    _ => **term = t_const(c_error()),
-                                }
-                            }
-                        } else {
-                            panic!("Something went wrong with reducing an Application.");
-                        }
-                    }
-                    Term::Lambda(param, body) => {
-                        let fresh_var = environment.fresh_var_based_on(param);
-
-                        let mut body_substed = mem::replace(body, None);
-                        replace_var(&mut body_substed, param, &fresh_var);
-
-                        let t2_substed = mem::replace(t2, None);
-
-                        environment.add_possibly_reducible(fresh_var, some_or_panic(t2_substed));
-                        *term = some_or_panic(body_substed);
-                    }
-                    _ => **term = t_const(c_error()),
-                }
-            }
-            */
         }
         Term::Assignment(var, value) => {
             let value_substed = mem::replace(value, None);
