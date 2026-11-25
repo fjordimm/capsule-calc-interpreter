@@ -1,12 +1,37 @@
-use capsule_calc_interpreter::{capsule_calc::Environment, cli::start_cli, compiler::compile};
+use capsule_calc_interpreter::{
+    capsule_calc::{
+        Environment,
+        garbage_collection::collect_garbage,
+        interpreting::{is_irreducible, take_step_lazy},
+    },
+    cli::start_cli,
+    compiler::compile,
+};
+
+// fn main() -> std::io::Result<()> {
+//     let input = std::fs::read_to_string("examples/test2.txt")?;
+
+//     let term = compile(&input);
+//     let environment = Environment::new();
+
+//     start_cli(term, environment)
+// }
 
 fn main() -> std::io::Result<()> {
     let input = std::fs::read_to_string("examples/test2.txt")?;
 
-    let term = compile(&input);
-    let environment = Environment::new();
+    let mut term = compile(&input);
+    let mut environment = Environment::new();
 
-    start_cli(term, environment)
+    for _ in 0..100 {
+        if is_irreducible(&term) {
+            break;
+        }
+        take_step_lazy(&mut term, &mut environment);
+    }
+    collect_garbage(&term, &mut environment);
+
+    Ok(())
 }
 
 // TODO: make step rule for ITE

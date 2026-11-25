@@ -1,9 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::capsule_calc::{
-    collection_of_const_funcs::TO_CHURCH_BOOL,
-    interpreting::{is_irreducible, take_step_lazy},
-};
+use crate::capsule_calc::interpreting::{is_irreducible, take_step_lazy};
 
 pub enum Term {
     Const(Const),
@@ -13,6 +10,7 @@ pub enum Term {
     Lambda(Var, Option<Box<Term>>),
     Application(Option<Box<Term>>, Option<Box<Term>>),
     Assignment(Var, Option<Box<Term>>),
+    IfThenElse(Option<Box<Term>>, Option<Box<Term>>, Option<Box<Term>>),
 }
 
 pub fn t_const(value: Const) -> Term {
@@ -43,21 +41,16 @@ pub fn t_assignment(var: Var, value: Term) -> Term {
     Term::Assignment(var, Some(Box::new(value)))
 }
 
-pub fn tt_composition(t1: Term, t2: Term) -> Term {
-    t_application(t_lambda(v_new("$_"), t2), t1)
+pub fn t_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
+    Term::IfThenElse(
+        Some(Box::new(condition)),
+        Some(Box::new(then_case)),
+        Some(Box::new(else_case)),
+    )
 }
 
-pub fn tt_if_then_else(condition: Term, then_case: Term, else_case: Term) -> Term {
-    t_application(
-        t_application(
-            t_application(
-                t_application(t_constfunc_unary(TO_CHURCH_BOOL()), condition),
-                t_lambda(v_new("$_"), then_case),
-            ),
-            t_lambda(v_new("$_"), else_case),
-        ),
-        t_const(c_unit()),
-    )
+pub fn tt_composition(t1: Term, t2: Term) -> Term {
+    t_application(t_lambda(v_new("$_"), t2), t1)
 }
 
 pub fn tt_while_do(condition: Term, body: Term) -> Term {
@@ -65,7 +58,7 @@ pub fn tt_while_do(condition: Term, body: Term) -> Term {
         v_new("$w"),
         t_lambda(
             v_new("$x"),
-            tt_if_then_else(
+            t_if_then_else(
                 condition,
                 tt_composition(body, t_application(t_var(v_new("$w")), t_const(c_unit()))),
                 t_const(c_unit()),
@@ -97,6 +90,9 @@ impl Clone for Term {
             Self::Lambda(v, t) => Self::Lambda(v.clone(), t.to_owned()),
             Self::Application(t1, t2) => Self::Application(t1.to_owned(), t2.to_owned()),
             Self::Assignment(v, t) => Self::Assignment(v.clone(), t.to_owned()),
+            Self::IfThenElse(t1, t2, t3) => {
+                Self::IfThenElse(t1.to_owned(), t2.to_owned(), t3.to_owned())
+            }
         }
     }
 }
@@ -322,5 +318,6 @@ fn some_or_panic_rm(t: &mut Option<Box<Term>>) -> &mut Box<Term> {
 
 pub mod collection_of_const_funcs;
 pub mod displaying;
+pub mod equivalence;
 pub mod garbage_collection;
 pub mod interpreting;

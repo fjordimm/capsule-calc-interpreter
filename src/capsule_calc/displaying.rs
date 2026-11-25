@@ -83,6 +83,15 @@ impl TreeDisplayable for Term {
                 format!("Assignment: {}", variable.as_str()),
                 &[some_or_panic_r(value).tree_display(format!("{}└─", child_indent), true)],
             ),
+            Term::IfThenElse(condition, then_case, else_case) => make_tree_string(
+                indent,
+                "IfThenElse",
+                &[
+                    some_or_panic_r(condition).tree_display(format!("{}├─", child_indent), false),
+                    some_or_panic_r(then_case).tree_display(format!("{}├─", child_indent), false),
+                    some_or_panic_r(else_case).tree_display(format!("{}└─", child_indent), true),
+                ],
+            ),
         }
     }
 }
@@ -95,7 +104,10 @@ pub fn display_environment(env: &Environment) -> String {
 
         env.0.iter().for_each(|(var, env_term)| {
             display.push_str(&format!("{} :=\n", var.as_str()));
-            display.push_str(&display_term_with_indent(&env_term.term, String::from("  ")));
+            display.push_str(&display_term_with_indent(
+                &env_term.term,
+                String::from("  "),
+            ));
             display.push('\n');
         });
 

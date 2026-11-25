@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::capsule_calc::{
-    ConstFuncBinary, ConstFuncUnary, Environment, LazyEnvironmentResult, Term, Var, c_error,
+    Const, ConstFuncBinary, ConstFuncUnary, Environment, LazyEnvironmentResult, Term, Var, c_error,
     c_unit, some_or_panic, some_or_panic_r, some_or_panic_rm, t_const, t_var,
 };
 
@@ -69,6 +69,26 @@ pub fn take_step(term: &mut Box<Term>, environment: &mut Environment) {
 
                 environment.add_irreducible(var.clone(), some_or_panic(value_substed));
                 **term = t_const(c_unit());
+            }
+        }
+        Term::IfThenElse(condition, then_case, else_case) => {
+            let condition_s = some_or_panic_rm(condition);
+
+            if !is_irreducible(condition_s) {
+                take_step(condition_s, environment);
+            } else {
+                match condition_s.as_ref() {
+                    Term::Const(Const::Bool(condition_val)) => {
+                        if *condition_val {
+                            let then_case_substed = mem::replace(then_case, None);
+                            *term = some_or_panic(then_case_substed);
+                        } else {
+                            let else_case_substed = mem::replace(else_case, None);
+                            *term = some_or_panic(else_case_substed);
+                        }
+                    }
+                    _ => **term = t_const(c_error()),
+                }
             }
         }
     }
@@ -145,6 +165,26 @@ pub fn take_step_lazy(term: &mut Box<Term>, environment: &mut Environment) {
             environment.add_possibly_reducible(var.clone(), some_or_panic(value_substed));
             **term = t_const(c_unit());
         }
+        Term::IfThenElse(condition, then_case, else_case) => {
+            let condition_s = some_or_panic_rm(condition);
+
+            if !is_irreducible(condition_s) {
+                take_step(condition_s, environment);
+            } else {
+                match condition_s.as_ref() {
+                    Term::Const(Const::Bool(condition_val)) => {
+                        if *condition_val {
+                            let then_case_substed = mem::replace(then_case, None);
+                            *term = some_or_panic(then_case_substed);
+                        } else {
+                            let else_case_substed = mem::replace(else_case, None);
+                            *term = some_or_panic(else_case_substed);
+                        }
+                    }
+                    _ => **term = t_const(c_error()),
+                }
+            }
+        }
     }
 }
 
@@ -197,6 +237,11 @@ pub(super) fn replace_var(term: &mut Option<Box<Term>>, original: &Var, new: &Va
             }
 
             replace_var(value, original, new);
+        }
+        Term::IfThenElse(t1, t2, t3) => {
+            replace_var(t1, original, new);
+            replace_var(t2, original, new);
+            replace_var(t3, original, new);
         }
     }
 }

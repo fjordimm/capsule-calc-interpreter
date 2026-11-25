@@ -1,11 +1,10 @@
 use crate::{
-    capsule_calc::collection_of_const_funcs::{
-        ADD, AND, DIV, EQ, GEQ, GT, LEQ, LT, MUL, NEQ, NOT, OR, SUB,
-    },
     capsule_calc::{
-        ConstFuncBinary, Term, c_bool, c_error, c_int, c_unit, t_application, t_assignment, t_const,
-        t_constfunc_unary, t_constfunc_binary, t_lambda, t_var, tt_composition, tt_if_then_else, tt_let_be_in,
-        tt_letrec_be_in, tt_while_do, v_new,
+        ConstFuncBinary, Term, c_bool, c_error, c_int, c_unit,
+        collection_of_const_funcs::{ADD, AND, DIV, EQ, GEQ, GT, LEQ, LT, MUL, NEQ, NOT, OR, SUB},
+        t_application, t_assignment, t_const, t_constfunc_binary, t_constfunc_unary,
+        t_if_then_else, t_lambda, t_var, tt_composition, tt_let_be_in, tt_letrec_be_in,
+        tt_while_do, v_new,
     },
     compiler::lexing::Lexeme,
 };
@@ -48,7 +47,7 @@ impl Parser<'_> {
         self.expect_keyword(Lexeme::Else, "else");
         let else_case = self.parse_term();
 
-        Box::new(tt_if_then_else(*condition, *then_case, *else_case))
+        Box::new(t_if_then_else(*condition, *then_case, *else_case))
     }
 
     fn parse_while_do(&mut self) -> Box<Term> {
@@ -226,7 +225,10 @@ impl Parser<'_> {
     fn parse_prefix(&mut self) -> Box<Term> {
         if matches!(self.peek(), Some(Lexeme::Bang)) {
             self.position += 1;
-            return Box::new(t_application(t_constfunc_unary(NOT()), *self.parse_prefix()));
+            return Box::new(t_application(
+                t_constfunc_unary(NOT()),
+                *self.parse_prefix(),
+            ));
         }
 
         self.parse_atom()

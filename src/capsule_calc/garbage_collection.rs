@@ -37,6 +37,12 @@ fn free_vars(term: &Term) -> HashSet<&Var> {
             vars
         }
         Term::Assignment(_, value) => free_vars(some_or_panic_r(value)),
+        Term::IfThenElse(t1, t2, t3) => {
+            let mut vars = free_vars(some_or_panic_r(t1));
+            vars.extend(free_vars(some_or_panic_r(t2)));
+            vars.extend(free_vars(some_or_panic_r(t3)));
+            vars
+        }
     }
 }
 
